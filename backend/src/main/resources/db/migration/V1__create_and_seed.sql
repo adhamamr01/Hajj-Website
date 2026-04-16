@@ -1,6 +1,11 @@
+-- Idempotent migration: safe to run against both a fresh database and one
+-- whose schema was previously created by Hibernate (ddl-auto=update).
+-- CREATE TABLE IF NOT EXISTS skips existing tables.
+-- Inserts are guarded so they only run when the target table is empty.
+
 -- ── Schema ────────────────────────────────────────────────────────────────
 
-CREATE TABLE meeqat_point (
+CREATE TABLE IF NOT EXISTS meeqat_point (
     id           VARCHAR(50)  PRIMARY KEY,
     name         VARCHAR(255) NOT NULL,
     lat          DOUBLE PRECISION NOT NULL,
@@ -14,12 +19,12 @@ CREATE TABLE meeqat_point (
     video_url    VARCHAR(255)
 );
 
-CREATE TABLE meeqat_images (
+CREATE TABLE IF NOT EXISTS meeqat_images (
     meeqat_id  VARCHAR(50)  REFERENCES meeqat_point(id),
     image_url  VARCHAR(255)
 );
 
-CREATE TABLE journey_step (
+CREATE TABLE IF NOT EXISTS journey_step (
     id            BIGSERIAL PRIMARY KEY,
     step_number   INTEGER      NOT NULL,
     title         VARCHAR(255) NOT NULL,
@@ -28,7 +33,7 @@ CREATE TABLE journey_step (
     title_color   VARCHAR(50)
 );
 
-CREATE TABLE haram_boundary (
+CREATE TABLE IF NOT EXISTS haram_boundary (
     id          BIGSERIAL PRIMARY KEY,
     name        VARCHAR(255) NOT NULL,
     description TEXT,
@@ -38,7 +43,7 @@ CREATE TABLE haram_boundary (
     color       VARCHAR(10)
 );
 
-CREATE TABLE boundary_point (
+CREATE TABLE IF NOT EXISTS boundary_point (
     id          BIGSERIAL PRIMARY KEY,
     name        VARCHAR(255),
     lat         DOUBLE PRECISION NOT NULL,
@@ -47,6 +52,7 @@ CREATE TABLE boundary_point (
 );
 
 -- ── Meeqat points ─────────────────────────────────────────────────────────
+-- String primary key: ON CONFLICT (id) DO NOTHING handles existing rows.
 
 INSERT INTO meeqat_point VALUES
   ('dhul-hulayfah', 'Dhul-Hulayfah (Abyar Ali)',
@@ -78,9 +84,14 @@ INSERT INTO meeqat_point VALUES
    'Northeast', 'People from Iraq and regions to the northeast',
    '~94 km', '#27ae60', 'Dhat ''Irq checkpoint',
    'The Meeqat for pilgrims coming from Iraq and northeastern regions.',
-   '');
+   '')
+ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO meeqat_images VALUES
+-- ── Meeqat images ─────────────────────────────────────────────────────────
+-- No primary key on this table, so guard with a table-empty check.
+
+INSERT INTO meeqat_images (meeqat_id, image_url)
+SELECT meeqat_id, image_url FROM (VALUES
   ('dhul-hulayfah', '/images/dhul-hulayfah-1.jpg'),
   ('dhul-hulayfah', '/images/dhul-hulayfah-2.jpg'),
   ('dhul-hulayfah', '/images/dhul-hulayfah-3.jpg'),
@@ -100,11 +111,14 @@ INSERT INTO meeqat_images VALUES
   ('dhat-irq',      '/images/dhat-irq-1.jpg'),
   ('dhat-irq',      '/images/dhat-irq-2.jpg'),
   ('dhat-irq',      '/images/dhat-irq-3.jpg'),
-  ('dhat-irq',      '/images/dhat-irq-4.jpg');
+  ('dhat-irq',      '/images/dhat-irq-4.jpg')
+) AS v(meeqat_id, image_url)
+WHERE NOT EXISTS (SELECT 1 FROM meeqat_images LIMIT 1);
 
 -- ── Journey steps ─────────────────────────────────────────────────────────
 
-INSERT INTO journey_step (step_number, title, description, border_color, title_color) VALUES
+INSERT INTO journey_step (step_number, title, description, border_color, title_color)
+SELECT * FROM (VALUES
   (1, 'Intention & Preparation',
    'The journey begins with sincere intention (niyyah), seeking Allah''s pleasure alone. Pilgrims prepare physically, mentally, and spiritually, learning the rites and ensuring their means are halal.',
    'border-primary', 'text-primary'),
@@ -125,24 +139,32 @@ INSERT INTO journey_step (step_number, title, description, border_color, title_c
    'border-rose-500', 'text-rose-600'),
   (7, 'Farewell Tawaf',
    'Before departing Makkah, pilgrims perform a final Tawaf (Tawaf al-Wada''), bidding farewell to the Sacred House and asking Allah to accept their Hajj.',
-   'border-gray-600', 'text-gray-800');
+   'border-gray-600', 'text-gray-800')
+) AS v(step_number, title, description, border_color, title_color)
+WHERE NOT EXISTS (SELECT 1 FROM journey_step LIMIT 1);
 
 -- ── Haram boundaries ──────────────────────────────────────────────────────
 
-INSERT INTO haram_boundary (name, description, center_lat, center_lng, radius, color) VALUES
+INSERT INTO haram_boundary (name, description, center_lat, center_lng, radius, color)
+SELECT * FROM (VALUES
   ('Masjid al-Haram',
    'The central sacred mosque in Makkah that surrounds the Ka''bah, the focal point of all Muslim prayer.',
    21.4225, 39.8262, 3.0, '#16a34a'),
   ('Al-Haram Boundary',
    'The wider sanctuary boundary around Makkah within which hunting and cutting trees is prohibited.',
-   21.4225, 39.8262, 15.0, '#f97316');
+   21.4225, 39.8262, 15.0, '#f97316')
+) AS v(name, description, center_lat, center_lng, radius, color)
+WHERE NOT EXISTS (SELECT 1 FROM haram_boundary LIMIT 1);
 
 -- ── Boundary polygon points ───────────────────────────────────────────────
 
-INSERT INTO boundary_point (name, lat, lng, order_index) VALUES
-  ('إضاء لبن (Idhat Liban)',                    21.314,    39.8,      0),
-  ('جبل عرفات ذات سليم',                        21.3667,   40.0017,   1),
-  ('وادي نخلة',                                 21.6,      40.02,     2),
-  ('الجعرانة',                                  21.567,    39.95,     3),
-  ('التنعيم',                                   21.467978, 39.801154, 4),
-  ('منقطع الأعشاش بالحديبية',                   21.442102, 39.625658, 5);
+INSERT INTO boundary_point (name, lat, lng, order_index)
+SELECT * FROM (VALUES
+  ('إضاء لبن (Idhat Liban)',         21.314,    39.8,      0),
+  ('جبل عرفات ذات سليم',             21.3667,   40.0017,   1),
+  ('وادي نخلة',                      21.6,      40.02,     2),
+  ('الجعرانة',                       21.567,    39.95,     3),
+  ('التنعيم',                        21.467978, 39.801154, 4),
+  ('منقطع الأعشاش بالحديبية',        21.442102, 39.625658, 5)
+) AS v(name, lat, lng, order_index)
+WHERE NOT EXISTS (SELECT 1 FROM boundary_point LIMIT 1);
