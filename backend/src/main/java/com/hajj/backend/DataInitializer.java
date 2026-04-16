@@ -19,10 +19,10 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        seedMeeqatPoints();
-        seedJourneySteps();
-        seedHaramBoundaries();
-        seedBoundaryPoints();
+        if (meeqatRepository.count() == 0)        seedMeeqatPoints();
+        if (journeyRepository.count() == 0)        seedJourneySteps();
+        if (haramBoundaryRepository.count() == 0)  seedHaramBoundaries();
+        if (boundaryPointRepository.count() == 0)  seedBoundaryPoints();
     }
 
     private void seedMeeqatPoints() {
