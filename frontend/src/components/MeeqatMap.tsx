@@ -236,8 +236,8 @@ export default function MeeqatMap() {
       <div className="rounded-xl overflow-hidden shadow-2xl">
         <MapContainer center={[22.5, 40.0]} zoom={6} style={{ height: '600px', width: '100%' }} className="z-0">
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           />
 
           {/* Makkah */}
@@ -271,67 +271,38 @@ export default function MeeqatMap() {
                 position={[point.lat, point.lng]}
                 icon={createIcon(point.color, abbr(point.name))}
               >
-                <Popup maxWidth={420}>
-                  <div className="p-4 w-96">
+                <Popup maxWidth={300}>
+                  <div className="p-3 w-64">
                     {/* Header */}
-                    <h3 className="font-bold text-xl mb-1" style={{ color: point.color }}>
+                    <h3 className="font-bold text-base mb-1" style={{ color: point.color }}>
                       {point.name}
                     </h3>
-                    {point.description && (
-                      <p className="text-sm text-gray-600 mb-3 leading-relaxed">
-                        {point.description}
-                      </p>
-                    )}
 
-                    {/* Details */}
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 mb-4 text-sm border-t pt-3">
-                      <p><strong>Direction:</strong> {point.direction}</p>
-                      <p><strong>Distance:</strong> {point.distance}</p>
-                      <p className="col-span-2"><strong>For:</strong> {point.forPilgrims}</p>
-                      <p className="col-span-2"><strong>Modern name:</strong> {point.modern}</p>
-                    </div>
+                    {/* Key facts */}
+                    <p className="text-xs text-gray-500 mb-1">
+                      {point.direction} · {point.distance} from Makkah
+                    </p>
+                    <p className="text-xs text-gray-700 mb-3 leading-relaxed">
+                      <strong>For:</strong> {point.forPilgrims}
+                    </p>
 
                     {/* Images */}
                     {point.images.length > 0 && (
-                      <div className="mb-4 border-t pt-3">
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                          Photos
-                        </p>
-                        <div className="flex gap-2 overflow-x-auto pb-1">
-                          {point.images.map((src, i) => (
-                            <MeeqatImage key={i} src={src} alt={`${point.name} ${i + 1}`} />
-                          ))}
-                        </div>
-                        <p className="text-xs text-gray-400 mt-1">
-                          Place images in <code>frontend/public/images/</code>
-                        </p>
+                      <div className="flex gap-1.5 overflow-x-auto pb-1 mb-3">
+                        {point.images.map((src, i) => (
+                          <MeeqatImage key={i} src={src} alt={`${point.name} ${i + 1}`} />
+                        ))}
                       </div>
                     )}
 
-                    {/* Navigation */}
-                    <div className="grid grid-cols-2 gap-2 mb-2">
-                      <a
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${point.lat},${point.lng}`}
-                        target="_blank" rel="noopener noreferrer"
-                        className="bg-blue-500 text-white py-2 px-3 rounded text-center text-sm hover:bg-blue-600 transition-colors"
-                      >
-                        🗺️ Google Maps
-                      </a>
-                      <a
-                        href={`https://waze.com/ul?ll=${point.lat},${point.lng}&navigate=yes`}
-                        target="_blank" rel="noopener noreferrer"
-                        className="bg-cyan-500 text-white py-2 px-3 rounded text-center text-sm hover:bg-cyan-600 transition-colors"
-                      >
-                        🚗 Waze
-                      </a>
-                    </div>
+                    {/* Single navigate button */}
                     <button
                       onClick={() => handleGetDirections(point.lat, point.lng)}
-                      className="w-full py-2 px-3 rounded text-sm font-semibold text-white"
+                      className="w-full py-2 px-3 rounded text-sm font-semibold text-white flex items-center justify-center gap-1"
                       style={{ backgroundColor: point.color }}
                     >
-                      <Navigation className="inline w-4 h-4 mr-1" />
-                      Get Directions from My Location
+                      <Navigation className="w-4 h-4" />
+                      Navigate
                     </button>
                   </div>
                 </Popup>
