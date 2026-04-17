@@ -2,18 +2,9 @@
   publish = "frontend/dist"
   command = "cd frontend && npm install && npm run build"
 
-# ── API proxy ──────────────────────────────────────────────────────────────
-# Forward /api/* to the Render backend so the browser never makes a
-# cross-origin request and the SPA catch-all below never intercepts API calls.
-# Update the `to` URL if your Render service name differs.
-[[redirects]]
-  from   = "/api/*"
-  to     = "https://hajj-website.onrender.com/api/:splat"
-  status = 200
-  force  = true
-
-# ── SPA catch-all ─────────────────────────────────────────────────────────
-# Redirect all other routes to index.html so React Router handles them.
+# SPA catch-all — React Router handles all client-side routes.
+# API calls go directly to the Render backend via VITE_API_BASE_URL (set in
+# Netlify environment variables), so they never hit this redirect.
 [[redirects]]
   from   = "/*"
   to     = "/index.html"
