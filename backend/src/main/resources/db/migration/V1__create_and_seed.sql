@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS boundary_point (
 -- ── Meeqat points ─────────────────────────────────────────────────────────
 -- String primary key: ON CONFLICT (id) DO NOTHING handles existing rows.
 
-INSERT INTO meeqat_point VALUES
+INSERT INTO meeqat_point (id, name, lat, lng, direction, for_pilgrims, distance, color, modern, description, video_url) VALUES
   ('dhul-hulayfah', 'Dhul-Hulayfah (Abyar Ali)',
    24.41406002656528, 39.54286561840277,
    'North', 'People from Madinah and regions to the north',
