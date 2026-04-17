@@ -287,7 +287,7 @@ export default function MeeqatMap() {
                     </p>
 
                     {/* Images */}
-                    {point.images.length > 0 && (
+                    {point.images?.length > 0 && (
                       <div className="flex gap-1.5 overflow-x-auto pb-1 mb-3">
                         {point.images.map((src, i) => (
                           <MeeqatImage key={i} src={src} alt={`${point.name} ${i + 1}`} />

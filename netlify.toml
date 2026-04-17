@@ -2,7 +2,18 @@
   publish = "frontend/dist"
   command = "cd frontend && npm install && npm run build"
 
-# Redirect all routes to index.html so React Router handles them client-side
+# ── API proxy ──────────────────────────────────────────────────────────────
+# Forward /api/* to the Render backend so the browser never makes a
+# cross-origin request and the SPA catch-all below never intercepts API calls.
+# Update the `to` URL if your Render service name differs.
+[[redirects]]
+  from   = "/api/*"
+  to     = "https://hajj-website.onrender.com/api/:splat"
+  status = 200
+  force  = true
+
+# ── SPA catch-all ─────────────────────────────────────────────────────────
+# Redirect all other routes to index.html so React Router handles them.
 [[redirects]]
   from   = "/*"
   to     = "/index.html"
