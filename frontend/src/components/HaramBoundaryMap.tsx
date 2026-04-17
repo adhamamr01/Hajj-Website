@@ -72,7 +72,7 @@ export default function HaramBoundaryMap() {
           <Marker key={point.id} position={[point.lat, point.lng]}>
             <Popup>
               <div className="p-2">
-                <h3 className="font-bold text-sm mb-1">{point.name}</h3>
+                <h3 className="font-bold text-sm mb-1">{point.name || 'Boundary Point'}</h3>
               </div>
             </Popup>
           </Marker>

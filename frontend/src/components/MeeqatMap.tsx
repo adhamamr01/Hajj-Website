@@ -193,7 +193,7 @@ export default function MeeqatMap() {
       const end   = midBearing(p.bearing, next.bearing)
       return {
         id:     p.id,
-        color:  p.color,
+        color:  p.color ?? '#888',
         points: arcPoints(MAKKAH, p.radius, start, end),
       }
     })
@@ -269,27 +269,27 @@ export default function MeeqatMap() {
             <Fragment key={point.id}>
               <Marker
                 position={[point.lat, point.lng]}
-                icon={createIcon(point.color, abbr(point.name))}
+                icon={createIcon(point.color ?? '#888', abbr(point.name))}
               >
                 <Popup maxWidth={300}>
                   <div className="p-3 w-64">
                     {/* Header */}
-                    <h3 className="font-bold text-base mb-1" style={{ color: point.color }}>
+                    <h3 className="font-bold text-base mb-1" style={{ color: point.color ?? '#333' }}>
                       {point.name}
                     </h3>
 
                     {/* Key facts */}
                     <p className="text-xs text-gray-500 mb-1">
-                      {point.direction} · {point.distance} from Makkah
+                      {point.direction ?? '—'} · {point.distance ?? '—'} from Makkah
                     </p>
                     <p className="text-xs text-gray-700 mb-3 leading-relaxed">
-                      <strong>For:</strong> {point.forPilgrims}
+                      <strong>For:</strong> {point.forPilgrims ?? 'General pilgrims'}
                     </p>
 
                     {/* Images */}
-                    {point.images?.length > 0 && (
+                    {(point.images?.length ?? 0) > 0 && (
                       <div className="flex gap-1.5 overflow-x-auto pb-1 mb-3">
-                        {point.images.map((src, i) => (
+                        {point.images!.map((src, i) => (
                           <MeeqatImage key={i} src={src} alt={`${point.name} ${i + 1}`} />
                         ))}
                       </div>
@@ -299,7 +299,7 @@ export default function MeeqatMap() {
                     <button
                       onClick={() => handleGetDirections(point.lat, point.lng)}
                       className="w-full py-2 px-3 rounded text-sm font-semibold text-white flex items-center justify-center gap-1"
-                      style={{ backgroundColor: point.color }}
+                      style={{ backgroundColor: point.color ?? '#888' }}
                     >
                       <Navigation className="w-4 h-4" />
                       Navigate
@@ -311,7 +311,7 @@ export default function MeeqatMap() {
               {showLines && (
                 <Polyline
                   positions={[[point.lat, point.lng], MAKKAH]}
-                  pathOptions={{ color: point.color, weight: 2.5, opacity: 0.6, dashArray: '10 8' }}
+                  pathOptions={{ color: point.color ?? '#888', weight: 2.5, opacity: 0.6, dashArray: '10 8' }}
                 />
               )}
             </Fragment>
@@ -327,7 +327,7 @@ export default function MeeqatMap() {
             <div key={point.id} className="flex items-center gap-2">
               <div
                 className="w-8 h-8 rounded-full border-2 border-white shadow flex items-center justify-center"
-                style={{ backgroundColor: point.color }}
+                style={{ backgroundColor: point.color ?? '#888' }}
               >
                 <span className="text-white text-xs font-bold">{abbr(point.name)}</span>
               </div>

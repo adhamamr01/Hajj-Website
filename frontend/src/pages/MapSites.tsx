@@ -7,7 +7,9 @@ export default function MapSites() {
   const [boundaries, setBoundaries] = useState<HaramBoundary[]>([])
 
   useEffect(() => {
-    getHaramBoundaries().then(setBoundaries).catch(() => {})
+    getHaramBoundaries()
+      .then(setBoundaries)
+      .catch((err) => console.error('Failed to load Haram boundaries:', err))
   }, [])
 
   return (
@@ -44,8 +46,8 @@ export default function MapSites() {
             {boundaries.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                 {boundaries.map((b) => (
-                  <div key={b.id} className="card p-5 border-l-4" style={{ borderColor: b.color }}>
-                    <h3 className="text-xl font-semibold mb-2" style={{ color: b.color }}>
+                  <div key={b.id} className="card p-5 border-l-4" style={{ borderColor: b.color ?? '#999' }}>
+                    <h3 className="text-xl font-semibold mb-2" style={{ color: b.color ?? '#555' }}>
                       {b.name}
                     </h3>
                     <p className="text-gray-700 leading-relaxed">{b.description}</p>
@@ -72,7 +74,7 @@ export default function MapSites() {
             <ul className="space-y-4">
               {boundaries.map((b) => (
                 <li key={b.id} className="flex items-start gap-3">
-                  <span className="mt-1 w-4 h-4 rounded-full border" style={{ backgroundColor: b.color }} />
+                  <span className="mt-1 w-4 h-4 rounded-full border" style={{ backgroundColor: b.color ?? '#999' }} />
                   <div>
                     <p className="font-semibold">{b.name}</p>
                     <p className="text-sm text-gray-600">

@@ -14,8 +14,16 @@ public class BoundaryPoint {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String name;
+
+    // Nullable in DB (schema has no NOT NULL on name) — default to empty string
+    private String name         = "";
+
+    @Column(nullable = false)
     private double lat;
+
+    @Column(nullable = false)
     private double lng;
+
+    @Column(nullable = false)
     private int orderIndex;
 }

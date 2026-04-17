@@ -47,8 +47,8 @@ export default function Journey() {
           {!loading && !error && (
             <ol className="space-y-8">
               {steps.map((step) => (
-                <li key={step.id} className={`card p-6 border-l-4 ${step.borderColor}`}>
-                  <h3 className={`text-2xl font-semibold mb-2 ${step.titleColor}`}>
+                <li key={step.id} className={`card p-6 border-l-4 ${step.borderColor ?? 'border-gray-400'}`}>
+                  <h3 className={`text-2xl font-semibold mb-2 ${step.titleColor ?? 'text-gray-700'}`}>
                     {step.stepNumber}. {step.title}
                   </h3>
                   <p className="text-gray-700 leading-relaxed">{step.description}</p>
