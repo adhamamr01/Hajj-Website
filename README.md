@@ -2,7 +2,8 @@
 
 An educational web application about the Islamic pilgrimage of Hajj — covering the Meeqat boundary points, the step-by-step journey, and the sacred boundaries around Makkah, with interactive maps throughout.
 
-**Live site:** https://hajj-guide-website.netlify.app
+**Live site:** https://hajj-guide-website.netlify.app  
+**API:** deployed on Render (URL set as `VITE_API_BASE_URL` in Netlify environment variables — not committed to the repo)
 
 ---
 
@@ -94,14 +95,28 @@ The app runs at `http://localhost:5173`. It calls the backend at `http://localho
 
 ### Backend (Render)
 1. Push to `main` — Render builds the Docker image automatically.
-2. The `prod` Spring profile is activated via the `SPRING_PROFILES_ACTIVE=prod` environment variable.
-3. Database credentials are supplied as `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`.
-4. Health check path: `/actuator/health`
+2. Set the following environment variables in the Render dashboard:
+
+| Variable | Value |
+|---|---|
+| `SPRING_PROFILES_ACTIVE` | `prod` |
+| `SPRING_DATASOURCE_URL` | *(Render PostgreSQL internal URL)* |
+| `SPRING_DATASOURCE_USERNAME` | *(DB user)* |
+| `SPRING_DATASOURCE_PASSWORD` | *(DB password)* |
+
+3. Health check path: `/actuator/health`
 
 ### Frontend (Netlify)
 1. Push to `main` — Netlify runs `cd frontend && npm install && npm run build`.
-2. `VITE_API_BASE_URL` must be set to the Render backend URL (e.g. `https://hajj-website.onrender.com/api`) in the Netlify environment variables so the build embeds the correct API base URL.
+2. Set the following environment variable in the Netlify dashboard (not committed to the repo):
+
+| Variable | Value |
+|---|---|
+| `VITE_API_BASE_URL` | `https://<your-render-service>.onrender.com/api` |
+
 3. The `[[redirects]]` rule in `netlify.toml` sends all unmatched routes to `index.html` for React Router.
+
+> **Note:** `VITE_API_BASE_URL` is embedded into the JS bundle at build time and is therefore visible in the browser regardless. Keeping it out of the repo avoids committing environment-specific URLs; it does not hide the URL from users.
 
 ---
 
