@@ -7,11 +7,12 @@ import type { BoundaryPoint } from '../types'
 
 const MAKKAH_COORDS: [number, number] = [21.4225, 39.8262]
 
-delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+// Small green dot for boundary polygon vertices — no CDN dependency
+const boundaryPointIcon = L.divIcon({
+  className: '',
+  html: `<div style="width:10px;height:10px;background:#22c55e;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4)"></div>`,
+  iconSize: [10, 10],
+  iconAnchor: [5, 5],
 })
 
 const kaabaIcon = L.divIcon({
@@ -69,7 +70,7 @@ export default function HaramBoundaryMap() {
         </Marker>
 
         {points.map((point) => (
-          <Marker key={point.id} position={[point.lat, point.lng]}>
+          <Marker key={point.id} position={[point.lat, point.lng]} icon={boundaryPointIcon}>
             <Popup>
               <div className="p-2">
                 <h3 className="font-bold text-sm mb-1">{point.name || 'Boundary Point'}</h3>
