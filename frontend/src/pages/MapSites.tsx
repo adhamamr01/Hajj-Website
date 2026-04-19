@@ -14,9 +14,23 @@ export default function MapSites() {
 
   return (
     <div className="min-h-screen">
-      <section className="bg-gradient-to-br from-primary to-primary-light py-16 text-white">
+      <section
+        className="py-16 text-white"
+        style={{ background: 'linear-gradient(135deg, #0f3d27 0%, #1a5f3f 55%, #2a7f5f 100%)' }}
+      >
         <div className="container-custom text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Sacred Boundaries of Makkah</h1>
+          <h1
+            className="mb-4 text-white"
+            style={{
+              fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
+              fontStyle: 'italic',
+              fontWeight: 600,
+              fontSize: 'clamp(2rem, 5vw, 3.25rem)',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            Sacred Boundaries of Makkah
+          </h1>
           <p className="text-xl text-white/90 max-w-3xl mx-auto">
             Learn about the Al-Haram sanctuary and the wider area around Makkah that has special rulings and
             virtues.

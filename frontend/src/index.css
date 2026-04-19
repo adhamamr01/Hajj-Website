@@ -3,9 +3,39 @@
 @tailwind utilities;
 
 @layer base {
+  /* ── Design tokens (Sanctuary Green theme) ── */
   :root {
-    --primary-color: #1a5f3f;
-    --secondary-color: #d4af37;
+    /* Brand */
+    --primary:        #1a5f3f;
+    --primary-light:  #2a7f5f;
+    --primary-dark:   #0f3d27;
+    --secondary:       #d4af37;
+    --secondary-light: #e4bf57;
+    --secondary-dark:  #b49627;
+
+    /* Foreground */
+    --fg-1: #0f1e17;
+    --fg-2: #2f3e35;
+    --fg-3: #667566;
+
+    /* Background */
+    --bg-1: #ffffff;
+    --bg-2: #f4f2ec;
+
+    /* Hero gradient — three-stop deep green */
+    --bg-hero: linear-gradient(135deg, #0f3d27 0%, #1a5f3f 55%, #2a7f5f 100%);
+
+    /* Semantic step / Meeqat accent colors */
+    --accent-red:    #e74c3c;
+    --accent-blue:   #3498db;
+    --accent-amber:  #f39c12;
+    --accent-purple: #9b59b6;
+    --accent-green:  #27ae60;
+
+    /* Motion */
+    --dur-fast: 200ms;
+    --dur-slow: 300ms;
+    --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   html {
@@ -13,21 +43,30 @@
   }
 
   body {
-    @apply antialiased;
+    @apply antialiased font-sans text-base;
+    color: var(--fg-2);
+    background: var(--bg-1);
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-primary hover:bg-primary-light text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5;
+    @apply bg-primary hover:bg-primary-light text-white font-semibold py-3 px-6 rounded-lg
+           transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5;
   }
 
   .btn-secondary {
-    @apply bg-secondary hover:bg-secondary-light text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200;
+    @apply bg-secondary hover:bg-secondary-light text-white font-semibold py-3 px-6 rounded-lg
+           transition-all duration-200;
   }
 
+  /* Green-tinted shadow from Sanctuary theme */
   .card {
-    @apply bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 p-6;
+    @apply bg-white rounded-xl transition-shadow duration-300 p-6;
+    box-shadow: 0 8px 24px -8px rgba(15, 61, 39, 0.2);
+  }
+  .card:hover {
+    box-shadow: 0 20px 40px -16px rgba(15, 61, 39, 0.3);
   }
 
   .container-custom {
@@ -36,11 +75,17 @@
 }
 
 @layer utilities {
+  /* Leaflet map z-index fix */
   .leaflet-container {
     @apply z-0;
   }
 
   .leaflet-popup-content-wrapper {
     @apply rounded-lg shadow-lg;
+  }
+
+  /* Display font utility */
+  .font-display {
+    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
   }
 }

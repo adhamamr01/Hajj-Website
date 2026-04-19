@@ -11,9 +11,23 @@ const meeqatSummary = [
 export default function MapRoute() {
   return (
     <div className="min-h-screen">
-      <section className="bg-gradient-to-br from-primary to-primary-light py-16 text-white">
+      <section
+        className="py-16 text-white"
+        style={{ background: 'linear-gradient(135deg, #0f3d27 0%, #1a5f3f 55%, #2a7f5f 100%)' }}
+      >
         <div className="container-custom text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">The Meeqat Points</h1>
+          <h1
+            className="mb-4 text-white"
+            style={{
+              fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
+              fontStyle: 'italic',
+              fontWeight: 600,
+              fontSize: 'clamp(2rem, 5vw, 3.25rem)',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            The Meeqat Points
+          </h1>
           <p className="text-xl text-white/90 max-w-3xl mx-auto">
             Designated stations where pilgrims enter the state of Ihram before entering Makkah
           </p>

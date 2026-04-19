@@ -16,9 +16,23 @@ export default function Journey() {
 
   return (
     <div className="min-h-screen">
-      <section className="bg-gradient-to-br from-primary to-primary-light py-16 text-white">
+      <section
+        className="py-16 text-white"
+        style={{ background: 'linear-gradient(135deg, #0f3d27 0%, #1a5f3f 55%, #2a7f5f 100%)' }}
+      >
         <div className="container-custom text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">The Journey of Hajj</h1>
+          <h1
+            className="mb-4 text-white"
+            style={{
+              fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
+              fontStyle: 'italic',
+              fontWeight: 600,
+              fontSize: 'clamp(2rem, 5vw, 3.25rem)',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            The Journey of Hajj
+          </h1>
           <p className="text-xl text-white/90 max-w-3xl mx-auto">
             Follow the step-by-step spiritual journey from intention to farewell Tawaf, understanding each major
             rite along the way.
@@ -29,7 +43,17 @@ export default function Journey() {
       <section className="container-custom py-16">
         <div className="max-w-4xl mx-auto space-y-10">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-primary mb-2">Overview of the Pilgrimage</h2>
+            <h2
+              className="text-primary mb-2"
+              style={{
+                fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
+                fontStyle: 'italic',
+                fontWeight: 600,
+                fontSize: '2rem',
+              }}
+            >
+              Overview of the Pilgrimage
+            </h2>
             <p className="text-gray-700 leading-relaxed">
               This page gives a high-level narrative of the Hajj journey. It is not a fiqh ruling, but an
               educational overview to pair with the interactive maps in this site.

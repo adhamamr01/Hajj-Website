@@ -8,7 +8,18 @@ export default function Home() {
       <Hero />
       <section className="container-custom py-16">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-primary mb-4">Embark on a Spiritual Journey</h2>
+          <h2
+            className="text-primary mb-4"
+            style={{
+              fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
+              fontStyle: 'italic',
+              fontWeight: 600,
+              fontSize: '2.5rem',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            Embark on a Spiritual Journey
+          </h2>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Hajj is one of the five pillars of Islam, a sacred pilgrimage to Makkah that every Muslim who is
             physically and financially able must undertake at least once in their lifetime. Discover the profound

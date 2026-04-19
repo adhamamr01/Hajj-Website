@@ -15,6 +15,18 @@ export default {
           dark: '#b49627',
         },
       },
+      fontFamily: {
+        sans: ["'Inter'", 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        display: ["'Cormorant Garamond'", "'Playfair Display'", 'Georgia', 'serif'],
+      },
+      boxShadow: {
+        'card': '0 8px 24px -8px rgba(15,61,39,0.2)',
+        'marker': '0 3px 10px rgba(0,0,0,0.35)',
+      },
+      borderRadius: {
+        'xl': '12px',
+        '2xl': '16px',
+      },
       animation: {
         'fade-in': 'fadeIn 0.6s ease-in-out',
         'slide-up': 'slideUp 0.6s ease-out',
