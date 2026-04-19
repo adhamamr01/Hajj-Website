@@ -23,16 +23,6 @@ public class JourneyStep {
 
     public JourneyStep() {}
 
-    public JourneyStep(Long id, int stepNumber, String title,
-                       String description, String borderColor, String titleColor) {
-        this.id = id;
-        this.stepNumber = stepNumber;
-        this.title = title;
-        this.description = description;
-        this.borderColor = borderColor;
-        this.titleColor = titleColor;
-    }
-
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

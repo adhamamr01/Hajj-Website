@@ -28,17 +28,6 @@ public class HaramBoundary {
 
     public HaramBoundary() {}
 
-    public HaramBoundary(Long id, String name, String description,
-                         double centerLat, double centerLng, double radius, String color) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.centerLat = centerLat;
-        this.centerLng = centerLng;
-        this.radius = radius;
-        this.color = color;
-    }
-
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

@@ -22,14 +22,6 @@ public class BoundaryPoint {
 
     public BoundaryPoint() {}
 
-    public BoundaryPoint(Long id, String name, double lat, double lng, int orderIndex) {
-        this.id = id;
-        this.name = name;
-        this.lat = lat;
-        this.lng = lng;
-        this.orderIndex = orderIndex;
-    }
-
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

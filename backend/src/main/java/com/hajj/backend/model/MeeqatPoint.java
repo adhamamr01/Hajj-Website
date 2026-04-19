@@ -39,24 +39,6 @@ public class MeeqatPoint {
 
     public MeeqatPoint() {}
 
-    public MeeqatPoint(String id, String name, double lat, double lng,
-                       String direction, String forPilgrims, String distance,
-                       String color, String modern, String description,
-                       String videoUrl, List<String> images) {
-        this.id = id;
-        this.name = name;
-        this.lat = lat;
-        this.lng = lng;
-        this.direction = direction;
-        this.forPilgrims = forPilgrims;
-        this.distance = distance;
-        this.color = color;
-        this.modern = modern;
-        this.description = description;
-        this.videoUrl = videoUrl;
-        this.images = images != null ? images : new ArrayList<>();
-    }
-
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 

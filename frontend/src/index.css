@@ -83,9 +83,4 @@
   .leaflet-popup-content-wrapper {
     @apply rounded-lg shadow-lg;
   }
-
-  /* Display font utility */
-  .font-display {
-    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
-  }
 }
