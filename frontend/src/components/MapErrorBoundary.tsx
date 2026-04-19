@@ -6,6 +6,10 @@ interface State { crashed: boolean; message: string }
 /**
  * Catches runtime errors thrown by Leaflet or map child components and
  * renders a friendly fallback instead of a blank page.
+ *
+ * Must be a class component — React only supports error boundaries via
+ * getDerivedStateFromError / componentDidCatch, which have no function-
+ * component equivalent. There is no hook alternative.
  */
 export default class MapErrorBoundary extends Component<Props, State> {
   state: State = { crashed: false, message: '' }

@@ -8,8 +8,19 @@ interface ApiState<T> {
 }
 
 /**
- * Fetches data from an async function and exposes loading / error / retry state.
- * Re-runs whenever `fn` identity changes (wrap in useCallback if needed).
+ * Fetches data from an async function and manages loading / error / retry state.
+ *
+ * @param fn            - Async function to call. Should be stable (defined outside
+ *                        the component or wrapped in useCallback) to avoid re-fetching
+ *                        on every render. The module-level api/client functions satisfy
+ *                        this automatically.
+ * @param errorMessage  - User-facing string shown when `fn` rejects. Keeps the hook
+ *                        generic — callers decide what the error means to the user.
+ *
+ * Retry pattern: a `tick` counter in state is incremented by `retry()`. The
+ * useEffect depends on `tick`, so incrementing it triggers a fresh fetch without
+ * needing to re-pass `fn`. The effect also sets a `cancelled` flag on cleanup so
+ * state is never updated after the component unmounts or the effect re-runs.
  */
 export function useApi<T>(fn: () => Promise<T>, errorMessage: string): ApiState<T> {
   const [data, setData]       = useState<T | null>(null)

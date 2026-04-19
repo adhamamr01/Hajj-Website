@@ -7,6 +7,15 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Business logic for Meeqat (Ihram station) data.
+ *
+ * @Cacheable is placed here, not on the controller, so that any future
+ * internal caller also benefits from the cache and the controller stays
+ * a thin HTTP adapter with no caching concerns.
+ *
+ * Cache config (name, TTL, max size) lives in CacheManagerConfig.
+ */
 @Service
 public class MeeqatService {
 
@@ -16,6 +25,7 @@ public class MeeqatService {
         this.meeqatRepository = meeqatRepository;
     }
 
+    /** Returns all Meeqat points. Result is cached for 60 minutes. */
     @Cacheable("meeqat")
     public List<MeeqatPoint> findAll() {
         return meeqatRepository.findAll();

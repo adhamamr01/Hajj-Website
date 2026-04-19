@@ -5,6 +5,14 @@ import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * JPA entity for a Meeqat (Ihram station) point.
+ *
+ * NOTE: Do NOT add Lombok @Data / @NoArgsConstructor / @AllArgsConstructor.
+ * Lombok's annotation processor fails silently on Java 25, so Jackson cannot
+ * find getters and omits all fields from JSON responses. Keep explicit
+ * no-arg constructor and getters/setters.
+ */
 @Entity
 public class MeeqatPoint {
 

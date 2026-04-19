@@ -2,6 +2,15 @@ package com.hajj.backend.model;
 
 import jakarta.persistence.*;
 
+/**
+ * JPA entity for a single step in the Hajj pilgrimage narrative.
+ * Steps are ordered by stepNumber and rendered sequentially on the Journey page.
+ *
+ * NOTE: Do NOT add Lombok @Data / @NoArgsConstructor / @AllArgsConstructor.
+ * Lombok's annotation processor fails silently on Java 25, so Jackson cannot
+ * find getters and omits all fields from JSON responses. Keep explicit
+ * no-arg constructor and getters/setters.
+ */
 @Entity
 public class JourneyStep {
 

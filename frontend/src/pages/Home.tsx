@@ -15,14 +15,8 @@ export default function Home() {
       <section className="container-custom py-16">
         <div className="text-center mb-12">
           <h2
-            className="text-primary mb-4"
-            style={{
-              fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
-              fontStyle: 'italic',
-              fontWeight: 600,
-              fontSize: '2.5rem',
-              letterSpacing: '-0.01em',
-            }}
+            className="text-primary mb-4 display-font font-semibold"
+            style={{ fontSize: '2.5rem' }}
           >
             Embark on a Spiritual Journey
           </h2>

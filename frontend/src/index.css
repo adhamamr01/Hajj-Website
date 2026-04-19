@@ -73,7 +73,15 @@
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
 
-  /* Display heading used in page hero sections */
+  /* Cormorant Garamond italic — applied to any display heading or brand name.
+     Combine with Tailwind size/weight classes for full control. */
+  .display-font {
+    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    letter-spacing: -0.01em;
+  }
+
+  /* Display heading used in page hero sections (PageHero component) */
   .hero-title {
     font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
     font-style: italic;

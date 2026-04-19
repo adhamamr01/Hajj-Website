@@ -2,6 +2,15 @@ package com.hajj.backend.model;
 
 import jakarta.persistence.*;
 
+/**
+ * JPA entity for a single lat/lng vertex of the Haram boundary polygon,
+ * ordered by orderIndex to form a closed shape on the map.
+ *
+ * NOTE: Do NOT add Lombok @Data / @NoArgsConstructor / @AllArgsConstructor.
+ * Lombok's annotation processor fails silently on Java 25, so Jackson cannot
+ * find getters and omits all fields from JSON responses. Keep explicit
+ * no-arg constructor and getters/setters.
+ */
 @Entity
 public class BoundaryPoint {
 

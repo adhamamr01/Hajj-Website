@@ -19,14 +19,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           <Link
             to="/"
-            className="text-primary hover:text-primary-light transition-colors"
-            style={{
-              fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
-              fontStyle: 'italic',
-              fontWeight: 600,
-              fontSize: '1.5rem',
-              letterSpacing: '-0.01em',
-            }}
+            className="text-primary hover:text-primary-light transition-colors display-font font-semibold text-2xl"
           >
             Journey to Hajj
           </Link>
