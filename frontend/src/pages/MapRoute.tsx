@@ -1,4 +1,5 @@
 import MeeqatMap from '../components/MeeqatMap'
+import { useMeta } from '../hooks/useMeta'
 
 const meeqatSummary = [
   { name: 'Dhul-Hulayfah', for: 'Madinah and beyond', distance: '~450 km', color: 'border-red-500' },
@@ -9,6 +10,12 @@ const meeqatSummary = [
 ]
 
 export default function MapRoute() {
+  useMeta({
+    title: 'Meeqat Points',
+    description:
+      'Explore the five Meeqat stations on an interactive map — the designated boundaries where pilgrims enter Ihram before approaching Makkah.',
+  })
+
   return (
     <div className="min-h-screen">
       <section

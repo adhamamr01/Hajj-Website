@@ -1,8 +1,14 @@
 import Hero from '../components/Hero'
 import EntryPoints from '../components/EntryPoints'
 import InfoSection from '../components/InfoSection'
+import { useMeta } from '../hooks/useMeta'
 
 export default function Home() {
+  useMeta({
+    title: 'Journey to Hajj',
+    description:
+      'An interactive guide to the sacred pilgrimage of Hajj — explore the Meeqat points, sacred boundaries, and the step-by-step spiritual journey.',
+  })
   return (
     <>
       <Hero />

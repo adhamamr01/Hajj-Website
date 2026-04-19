@@ -2,8 +2,15 @@ import { useState, useEffect } from 'react'
 import HaramBoundaryMap from '../components/HaramBoundaryMap'
 import { getHaramBoundaries } from '../api/client'
 import type { HaramBoundary } from '../types'
+import { useMeta } from '../hooks/useMeta'
 
 export default function MapSites() {
+  useMeta({
+    title: 'Sacred Boundaries of Makkah',
+    description:
+      'Discover the Al-Haram sanctuary boundary and the sacred zones around Makkah — their significance, rulings, and geographic extent — on an interactive map.',
+  })
+
   const [boundaries, setBoundaries] = useState<HaramBoundary[]>([])
 
   useEffect(() => {
