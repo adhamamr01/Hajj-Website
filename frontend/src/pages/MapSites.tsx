@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
 import HaramBoundaryMap from '../components/HaramBoundaryMap'
+import MapErrorBoundary from '../components/MapErrorBoundary'
 import { getHaramBoundaries } from '../api/client'
-import type { HaramBoundary } from '../types'
+import { useApi } from '../hooks/useApi'
 import { useMeta } from '../hooks/useMeta'
 
 export default function MapSites() {
@@ -11,13 +11,12 @@ export default function MapSites() {
       'Discover the Al-Haram sanctuary boundary and the sacred zones around Makkah — their significance, rulings, and geographic extent — on an interactive map.',
   })
 
-  const [boundaries, setBoundaries] = useState<HaramBoundary[]>([])
+  const { data: boundaries, loading: bLoading, error: bError, retry: bRetry } = useApi(
+    getHaramBoundaries,
+    'Failed to load boundary information. Is the backend running?',
+  )
 
-  useEffect(() => {
-    getHaramBoundaries()
-      .then(setBoundaries)
-      .catch((err) => console.error('Failed to load Haram boundaries:', err))
-  }, [])
+  const safeBoundaries = boundaries ?? []
 
   return (
     <div className="min-h-screen">
@@ -46,11 +45,13 @@ export default function MapSites() {
       </section>
 
       <section className="container-custom py-12">
-        <HaramBoundaryMap />
+        <MapErrorBoundary>
+          <HaramBoundaryMap />
+        </MapErrorBoundary>
       </section>
 
       <section className="container-custom pb-16">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
           <div className="space-y-6 lg:col-span-2">
             <h2 className="text-3xl font-bold text-primary mb-2">Understanding the Haram</h2>
             <p className="text-gray-700 leading-relaxed">
@@ -64,9 +65,26 @@ export default function MapSites() {
               the Haram area.
             </p>
 
-            {boundaries.length > 0 && (
+            {/* Boundaries error */}
+            {bError && (
+              <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg flex items-center justify-between gap-4">
+                <p className="text-red-700 text-sm">{bError}</p>
+                <button onClick={bRetry} className="btn-primary text-sm py-1.5 px-4 flex-shrink-0">
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {/* Boundaries loading shimmer */}
+            {bLoading && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
+                {[1, 2].map(i => <div key={i} className="bg-gray-100 rounded-xl h-32" />)}
+              </div>
+            )}
+
+            {safeBoundaries.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                {boundaries.map((b) => (
+                {safeBoundaries.map(b => (
                   <div key={b.id} className="card p-5 border-l-4" style={{ borderColor: b.color ?? '#999' }}>
                     <h3 className="text-xl font-semibold mb-2" style={{ color: b.color ?? '#555' }}>
                       {b.name}
@@ -90,12 +108,22 @@ export default function MapSites() {
             </div>
           </div>
 
+          {/* Sidebar legend */}
           <div className="card p-6 h-fit">
             <h3 className="text-xl font-bold text-primary mb-4 text-center">Boundary Legend</h3>
+            {bLoading && (
+              <div className="space-y-3 animate-pulse">
+                {[1, 2].map(i => <div key={i} className="h-10 bg-gray-100 rounded" />)}
+              </div>
+            )}
             <ul className="space-y-4">
-              {boundaries.map((b) => (
+              {safeBoundaries.map(b => (
                 <li key={b.id} className="flex items-start gap-3">
-                  <span className="mt-1 w-4 h-4 rounded-full border" style={{ backgroundColor: b.color ?? '#999' }} />
+                  {/* Larger touch-friendly dot */}
+                  <span
+                    className="mt-0.5 w-5 h-5 flex-shrink-0 rounded-full border"
+                    style={{ backgroundColor: b.color ?? '#999' }}
+                  />
                   <div>
                     <p className="font-semibold">{b.name}</p>
                     <p className="text-sm text-gray-600">

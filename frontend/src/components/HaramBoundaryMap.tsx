@@ -1,13 +1,11 @@
-import { useState, useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Polygon } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { getBoundaryPoints } from '../api/client'
-import type { BoundaryPoint } from '../types'
+import { useApi } from '../hooks/useApi'
 
 const MAKKAH_COORDS: [number, number] = [21.4225, 39.8262]
 
-// Small green dot for boundary polygon vertices — no CDN dependency
 const boundaryPointIcon = L.divIcon({
   className: '',
   html: `<div style="width:10px;height:10px;background:#22c55e;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4)"></div>`,
@@ -23,38 +21,49 @@ const kaabaIcon = L.divIcon({
 })
 
 export default function HaramBoundaryMap() {
-  const [points, setPoints] = useState<BoundaryPoint[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data: points, loading, error, retry } = useApi(
+    getBoundaryPoints,
+    'Failed to load boundary data. Is the backend running?',
+  )
 
-  useEffect(() => {
-    getBoundaryPoints()
-      .then(setPoints)
-      .catch(() => setError('Failed to load boundary data. Is the backend running?'))
-      .finally(() => setLoading(false))
-  }, [])
-
+  // ── Loading state ─────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="h-[500px] bg-gray-200 rounded-xl flex items-center justify-center">
-        <p className="text-gray-600">Loading map...</p>
+      <div
+        className="rounded-xl bg-gray-200 animate-pulse flex items-center justify-center"
+        style={{ height: 'min(500px, 60vh)' }}
+      >
+        <p className="text-gray-500 text-sm">Loading map…</p>
       </div>
     )
   }
 
+  // ── Error state ───────────────────────────────────────────────────────
   if (error) {
     return (
-      <div className="h-[500px] bg-red-50 rounded-xl flex items-center justify-center border border-red-200">
-        <p className="text-red-600">{error}</p>
+      <div
+        className="rounded-xl bg-red-50 border border-red-200 flex flex-col items-center justify-center gap-4 p-8"
+        style={{ minHeight: 'min(300px, 50vh)' }}
+      >
+        <p className="text-red-700 font-medium text-center">{error}</p>
+        <button onClick={retry} className="btn-primary text-sm py-2 px-5">
+          Retry
+        </button>
       </div>
     )
   }
 
-  const polygon: [number, number][] = points.map((p) => [p.lat, p.lng])
+  const safePoints = points ?? []
+  const polygon: [number, number][] = safePoints.map(p => [p.lat, p.lng])
 
   return (
     <div className="rounded-xl overflow-hidden shadow-2xl">
-      <MapContainer center={MAKKAH_COORDS} zoom={10} style={{ height: '500px', width: '100%' }} className="z-0">
+      <MapContainer
+        center={MAKKAH_COORDS}
+        zoom={10}
+        style={{ height: 'min(500px, 60vh)', width: '100%' }}
+        className="z-0"
+      >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -69,7 +78,7 @@ export default function HaramBoundaryMap() {
           </Popup>
         </Marker>
 
-        {points.map((point) => (
+        {safePoints.map(point => (
           <Marker key={point.id} position={[point.lat, point.lng]} icon={boundaryPointIcon}>
             <Popup>
               <div className="p-2">

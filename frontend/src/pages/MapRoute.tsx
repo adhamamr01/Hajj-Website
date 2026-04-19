@@ -1,4 +1,5 @@
 import MeeqatMap from '../components/MeeqatMap'
+import MapErrorBoundary from '../components/MapErrorBoundary'
 import { useMeta } from '../hooks/useMeta'
 
 const meeqatSummary = [
@@ -42,7 +43,9 @@ export default function MapRoute() {
       </section>
 
       <section className="container-custom py-12">
-        <MeeqatMap />
+        <MapErrorBoundary>
+          <MeeqatMap />
+        </MapErrorBoundary>
       </section>
 
       <section className="container-custom py-12">
