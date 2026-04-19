@@ -1,14 +1,8 @@
 package com.hajj.backend.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Entity
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class HaramBoundary {
 
     @Id
@@ -18,9 +12,8 @@ public class HaramBoundary {
     @Column(nullable = false)
     private String name;
 
-    // Nullable in DB — default to empty string so JSON never gets null
     @Column(columnDefinition = "TEXT")
-    private String description  = "";
+    private String description = "";
 
     @Column(nullable = false)
     private double centerLat;
@@ -31,5 +24,39 @@ public class HaramBoundary {
     @Column(nullable = false)
     private double radius;
 
-    private String color        = "";
+    private String color = "";
+
+    public HaramBoundary() {}
+
+    public HaramBoundary(Long id, String name, String description,
+                         double centerLat, double centerLng, double radius, String color) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.centerLat = centerLat;
+        this.centerLng = centerLng;
+        this.radius = radius;
+        this.color = color;
+    }
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public double getCenterLat() { return centerLat; }
+    public void setCenterLat(double centerLat) { this.centerLat = centerLat; }
+
+    public double getCenterLng() { return centerLng; }
+    public void setCenterLng(double centerLng) { this.centerLng = centerLng; }
+
+    public double getRadius() { return radius; }
+    public void setRadius(double radius) { this.radius = radius; }
+
+    public String getColor() { return color; }
+    public void setColor(String color) { this.color = color; }
 }

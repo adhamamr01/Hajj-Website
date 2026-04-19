@@ -8,7 +8,7 @@ import MapSites from './pages/MapSites'
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="flex flex-col min-h-screen">
         <Navbar />
         <main className="flex-1 pt-16">
