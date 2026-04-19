@@ -72,6 +72,15 @@
   .container-custom {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
+
+  /* Display heading used in page hero sections */
+  .hero-title {
+    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: clamp(2rem, 5vw, 3.25rem);
+    letter-spacing: -0.01em;
+  }
 }
 
 @layer utilities {

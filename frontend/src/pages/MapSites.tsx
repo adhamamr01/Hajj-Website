@@ -1,5 +1,6 @@
 import HaramBoundaryMap from '../components/HaramBoundaryMap'
 import MapErrorBoundary from '../components/MapErrorBoundary'
+import PageHero from '../components/PageHero'
 import { getHaramBoundaries } from '../api/client'
 import { useApi } from '../hooks/useApi'
 import { useMeta } from '../hooks/useMeta'
@@ -20,29 +21,10 @@ export default function MapSites() {
 
   return (
     <div className="min-h-screen">
-      <section
-        className="py-16 text-white"
-        style={{ background: 'linear-gradient(135deg, #0f3d27 0%, #1a5f3f 55%, #2a7f5f 100%)' }}
-      >
-        <div className="container-custom text-center">
-          <h1
-            className="mb-4 text-white"
-            style={{
-              fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
-              fontStyle: 'italic',
-              fontWeight: 600,
-              fontSize: 'clamp(2rem, 5vw, 3.25rem)',
-              letterSpacing: '-0.01em',
-            }}
-          >
-            Sacred Boundaries of Makkah
-          </h1>
-          <p className="text-xl text-white/90 max-w-3xl mx-auto">
-            Learn about the Al-Haram sanctuary and the wider area around Makkah that has special rulings and
-            virtues.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="Sacred Boundaries of Makkah"
+        subtitle="Learn about the Al-Haram sanctuary and the wider area around Makkah that has special rulings and virtues."
+      />
 
       <section className="container-custom py-12">
         <MapErrorBoundary>
