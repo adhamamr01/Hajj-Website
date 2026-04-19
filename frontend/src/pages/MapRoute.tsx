@@ -52,18 +52,17 @@ export default function MapRoute() {
         <div className="bg-gray-100 rounded-xl p-8">
           <h2 className="text-3xl font-bold text-primary mb-6">Understanding the Meeqat</h2>
           <p className="text-lg text-gray-700 leading-relaxed mb-8">
-            The Meeqat (\u0645\u064a\u0642\u0627\u062a) are the designated boundaries where pilgrims must enter the state of Ihram before
-            entering the sacred territory of Makkah. These points were established by Prophet Muhammad \u0633 for
-            people coming from different directions.
+            The Meeqat (ميقات, pl. مواقيت) are the designated stations where pilgrims must enter the
+            state of Ihram before proceeding to Makkah. They were established by the Prophet ﷺ for
+            people coming from different directions, and every pilgrim — whether arriving by land, sea,
+            or air — must pass through or align with one of these points.
           </p>
 
-          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg p-6 text-white mb-8">
-            <h3 className="text-xl font-bold mb-3">🧭 Get Directions to Any Meeqat</h3>
-            <p className="leading-relaxed">
-              Click on any Meeqat marker to access navigation options:
-              <br />• <strong>Google Maps</strong> – Full turn-by-turn directions
-              <br />• <strong>Waze</strong> – Live traffic and route optimization
-              <br />• <strong>My Location</strong> – Automatic directions from where you are
+          <div className="bg-primary/5 border-l-4 border-primary rounded-lg p-6 mb-8">
+            <h3 className="text-lg font-semibold text-primary mb-2">Directions to any Meeqat</h3>
+            <p className="text-gray-700 leading-relaxed">
+              Tap any marker on the map above to open its details. The <strong>Navigate</strong> button
+              will open Google Maps with directions from your current location to that Meeqat.
             </p>
           </div>
 
@@ -79,9 +78,9 @@ export default function MapRoute() {
 
           <div className="mt-8 bg-green-50 border-l-4 border-green-500 p-6 rounded-lg">
             <p className="text-gray-700 leading-relaxed">
-              <strong>Important:</strong> Pilgrims traveling by air typically enter Ihram before boarding their
-              flight or at special facilities at Jeddah airport. Modern pilgrims from all directions use these
-              historic Meeqat points or their modern equivalents.
+              <strong>Note:</strong> Pilgrims traveling by air typically enter Ihram before boarding
+              their flight or at the designated facilities at King Abdulaziz International Airport in
+              Jeddah. Consult a qualified scholar for the ruling specific to your route.
             </p>
           </div>
         </div>

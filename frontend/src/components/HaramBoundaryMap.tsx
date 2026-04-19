@@ -91,7 +91,7 @@ export default function HaramBoundaryMap() {
         {polygon.length > 0 && (
           <Polygon
             positions={polygon}
-            pathOptions={{ color: '#22c55e', weight: 3, opacity: 0.9, fillColor: '#22c55e', fillOpacity: 0.15 }}
+            pathOptions={{ color: '#16a34a', weight: 4, opacity: 1, fillColor: '#22c55e', fillOpacity: 0.25 }}
           >
             <Popup>
               <div className="p-2">
