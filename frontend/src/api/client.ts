@@ -9,14 +9,33 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? '/api',
 })
 
+// Module-level promise cache. Stores each request's promise on first call so
+// navigating back to a page resolves instantly without hitting the network again.
+// On failure the entry is evicted so the retry button triggers a real re-fetch.
+const cache = new Map<string, Promise<unknown>>()
+
+function cached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
+  if (!cache.has(key)) {
+    const p = fetcher().catch((err: unknown) => {
+      cache.delete(key)
+      return Promise.reject(err)
+    })
+    cache.set(key, p)
+  }
+  return cache.get(key) as Promise<T>
+}
+
+/** Clears the in-memory cache. Exposed for use in tests only. */
+export const clearCache = () => cache.clear()
+
 export const getMeeqatPoints = (): Promise<MeeqatPoint[]> =>
-  api.get('/meeqat').then((r) => requireArray<MeeqatPoint>(r.data, '/meeqat'))
+  cached('meeqat', () => api.get('/meeqat').then((r) => requireArray<MeeqatPoint>(r.data, '/meeqat')))
 
 export const getJourneySteps = (): Promise<JourneyStep[]> =>
-  api.get('/journey').then((r) => requireArray<JourneyStep>(r.data, '/journey'))
+  cached('journey', () => api.get('/journey').then((r) => requireArray<JourneyStep>(r.data, '/journey')))
 
 export const getHaramBoundaries = (): Promise<HaramBoundary[]> =>
-  api.get('/boundary').then((r) => requireArray<HaramBoundary>(r.data, '/boundary'))
+  cached('boundary', () => api.get('/boundary').then((r) => requireArray<HaramBoundary>(r.data, '/boundary')))
 
 export const getBoundaryPoints = (): Promise<BoundaryPoint[]> =>
-  api.get('/boundary/points').then((r) => requireArray<BoundaryPoint>(r.data, '/boundary/points'))
+  cached('boundary/points', () => api.get('/boundary/points').then((r) => requireArray<BoundaryPoint>(r.data, '/boundary/points')))
