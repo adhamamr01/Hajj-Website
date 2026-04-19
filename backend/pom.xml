@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.3</version>
+        <version>4.0.5</version>
         <relativePath/>
     </parent>
 
@@ -18,7 +18,10 @@
     <description>Hajj Website Backend REST API</description>
 
     <properties>
-        <java.version>21</java.version>
+        <java.version>25</java.version>
+        <!-- Explicit Lombok version — Spring Boot BOM ships an older build;
+             1.18.42 is the first release with full Java 25 support. -->
+        <lombok.version>1.18.42</lombok.version>
     </properties>
 
     <dependencies>
@@ -36,8 +39,14 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
+        </dependency>
+        <!-- Flyway 10+ splits DB support into separate modules.
+             This adds PostgreSQL 16 support to flyway-core. -->
+        <dependency>
             <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-core</artifactId>
+            <artifactId>flyway-database-postgresql</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

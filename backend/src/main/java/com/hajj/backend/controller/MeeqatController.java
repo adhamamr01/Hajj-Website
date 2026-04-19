@@ -2,17 +2,19 @@ package com.hajj.backend.controller;
 
 import com.hajj.backend.model.MeeqatPoint;
 import com.hajj.backend.service.MeeqatService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/meeqat")
-@RequiredArgsConstructor
 public class MeeqatController {
 
     private final MeeqatService meeqatService;
+
+    public MeeqatController(MeeqatService meeqatService) {
+        this.meeqatService = meeqatService;
+    }
 
     @GetMapping
     public List<MeeqatPoint> getAll() {

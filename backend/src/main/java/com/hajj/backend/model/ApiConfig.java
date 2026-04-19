@@ -1,9 +1,6 @@
 package com.hajj.backend.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * Rate-limit configuration for an API path prefix.
@@ -16,9 +13,6 @@ import lombok.NoArgsConstructor;
  */
 @Entity
 @Table(name = "api_config")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class ApiConfig {
 
     @Id
@@ -36,4 +30,24 @@ public class ApiConfig {
     /** Set to false to block this path entirely without removing the row. */
     @Column(nullable = false)
     private boolean enabled = true;
+
+    // JPA requires a no-arg constructor
+    public ApiConfig() {}
+
+    public ApiConfig(Long id, String path, int maxRequestsPerMinute, boolean enabled) {
+        this.id = id;
+        this.path = path;
+        this.maxRequestsPerMinute = maxRequestsPerMinute;
+        this.enabled = enabled;
+    }
+
+    public Long getId()                    { return id; }
+    public String getPath()                { return path; }
+    public int getMaxRequestsPerMinute()   { return maxRequestsPerMinute; }
+    public boolean isEnabled()             { return enabled; }
+
+    public void setId(Long id)                                   { this.id = id; }
+    public void setPath(String path)                             { this.path = path; }
+    public void setMaxRequestsPerMinute(int maxRequestsPerMinute){ this.maxRequestsPerMinute = maxRequestsPerMinute; }
+    public void setEnabled(boolean enabled)                      { this.enabled = enabled; }
 }

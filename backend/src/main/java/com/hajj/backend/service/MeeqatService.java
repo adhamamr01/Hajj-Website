@@ -2,17 +2,19 @@ package com.hajj.backend.service;
 
 import com.hajj.backend.model.MeeqatPoint;
 import com.hajj.backend.repository.MeeqatRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class MeeqatService {
 
     private final MeeqatRepository meeqatRepository;
+
+    public MeeqatService(MeeqatRepository meeqatRepository) {
+        this.meeqatRepository = meeqatRepository;
+    }
 
     @Cacheable("meeqat")
     public List<MeeqatPoint> findAll() {

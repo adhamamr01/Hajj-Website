@@ -2,7 +2,6 @@ package com.hajj.backend.service;
 
 import com.hajj.backend.model.ApiConfig;
 import com.hajj.backend.repository.ApiConfigRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -11,10 +10,13 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 public class ApiConfigService {
 
     private final ApiConfigRepository repository;
+
+    public ApiConfigService(ApiConfigRepository repository) {
+        this.repository = repository;
+    }
 
     /**
      * Returns all enabled API configs.

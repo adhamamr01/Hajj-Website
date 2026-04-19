@@ -1,7 +1,6 @@
 package com.hajj.backend.controller;
 
 import com.hajj.backend.service.RuntimeStore;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCache;
@@ -27,7 +26,6 @@ import java.util.*;
  */
 @RestController
 @RequestMapping("/api/admin")
-@RequiredArgsConstructor
 public class AdminController {
 
     private final CacheManager cacheManager;
@@ -35,6 +33,11 @@ public class AdminController {
 
     @Value("${app.admin.api-key}")
     private String adminApiKey;
+
+    public AdminController(CacheManager cacheManager, RuntimeStore runtimeStore) {
+        this.cacheManager = cacheManager;
+        this.runtimeStore = runtimeStore;
+    }
 
     // ── Cache endpoints ───────────────────────────────────────────────────
 
