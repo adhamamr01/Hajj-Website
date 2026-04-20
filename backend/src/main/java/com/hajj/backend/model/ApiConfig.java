@@ -31,6 +31,9 @@ public class ApiConfig {
     @Column(nullable = false)
     private boolean enabled = true;
 
+    /** Human-readable note explaining the limit (for the api_config table). */
+    private String description;
+
     // JPA requires a no-arg constructor
     public ApiConfig() {}
 
@@ -45,9 +48,11 @@ public class ApiConfig {
     public String getPath()                { return path; }
     public int getMaxRequestsPerMinute()   { return maxRequestsPerMinute; }
     public boolean isEnabled()             { return enabled; }
+    public String getDescription()         { return description; }
 
-    public void setId(Long id)                                   { this.id = id; }
-    public void setPath(String path)                             { this.path = path; }
-    public void setMaxRequestsPerMinute(int maxRequestsPerMinute){ this.maxRequestsPerMinute = maxRequestsPerMinute; }
-    public void setEnabled(boolean enabled)                      { this.enabled = enabled; }
+    public void setId(Long id)                                    { this.id = id; }
+    public void setPath(String path)                              { this.path = path; }
+    public void setMaxRequestsPerMinute(int max)                  { this.maxRequestsPerMinute = max; }
+    public void setEnabled(boolean enabled)                       { this.enabled = enabled; }
+    public void setDescription(String description)                { this.description = description; }
 }
