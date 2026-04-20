@@ -1,37 +1,33 @@
 package com.hajj.backend.filter;
 
-import com.hajj.backend.service.ApiConfigService;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
- * Sliding-window IP rate limiter driven by the api_config table.
+ * Sliding-window IP rate limiter.
  *
  * Behaviour per request:
- *   - Non-/api/* paths (health checks etc.) → pass through, no check.
- *   - /api/* with a matching enabled api_config row → apply its per-minute limit.
- *   - /api/* with NO matching row → reject 404. This acts as an allowlist:
- *     adding a new endpoint requires a Flyway migration to register it first.
+ *   - Non-/api/* paths → pass through, no check.
+ *   - /api/* matching a known prefix → apply its per-minute limit.
+ *   - /api/* with no matching prefix → reject 404.
  *
  * The sliding window is tracked per "ip:configPath" so each endpoint has an
  * independent window per IP — bursting on /api/analytics does not consume
  * the client's /api/admin budget.
  *
- * Limits are read via ApiConfigService which caches them in Caffeine (warmed
- * on startup) so no DB hit occurs per request.
- *
- * @Lazy on the ApiConfigService injection defers its creation until the first
- * request arrives, after the full Spring context (JPA, Caffeine) is ready.
+ * To add a new endpoint, add its prefix and limit to RATE_LIMITS below.
  */
 @Component
 @Order(2)   // runs after RequestLoggingFilter (Order 1)
@@ -42,7 +38,17 @@ public class RateLimitFilter implements Filter {
     /** Rolling window size in milliseconds (1 minute). */
     private static final long WINDOW_MS = 60_000;
 
-    private final ApiConfigService apiConfigService;
+    /**
+     * Allowed path prefixes and their per-IP-per-minute request limits.
+     * Longest-prefix matching is used, so /api/meeqat covers /api/meeqat/{id}.
+     */
+    private static final Map<String, Integer> RATE_LIMITS = Map.of(
+        "/api/meeqat",    20,
+        "/api/journey",   20,
+        "/api/boundary",  20,
+        "/api/analytics", 60,
+        "/api/admin",     10
+    );
 
     /**
      * Key: "ip:configPath" — e.g. "1.2.3.4:/api/meeqat"
@@ -50,10 +56,6 @@ public class RateLimitFilter implements Filter {
      */
     private final ConcurrentHashMap<String, ConcurrentLinkedDeque<Long>> requestLog =
             new ConcurrentHashMap<>();
-
-    public RateLimitFilter(@Lazy ApiConfigService apiConfigService) {
-        this.apiConfigService = apiConfigService;
-    }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -66,19 +68,15 @@ public class RateLimitFilter implements Filter {
         String ip   = resolveClientIp(req);
         long   now  = System.currentTimeMillis();
 
-        // Only apply the allowlist check to /api/* paths.
-        // Other paths (actuator, static files, etc.) pass through freely.
+        // Only apply to /api/* paths; everything else passes through freely.
         if (!path.startsWith("/api/")) {
             chain.doFilter(request, response);
             return;
         }
 
-        // Look up the limit for this path from the Caffeine-cached config
-        var config = apiConfigService.findMatchingConfig(path);
+        var limitEntry = findMatchingLimit(path);
 
-        if (config.isEmpty()) {
-            // Path is not registered in api_config — reject before it reaches any controller.
-            // To expose a new endpoint, add a row to api_config via a Flyway migration.
+        if (limitEntry.isEmpty()) {
             log.warn("Rejected unregistered path '{}' from IP {}", path, ip);
             res.setStatus(404);
             res.setContentType("application/json");
@@ -86,8 +84,8 @@ public class RateLimitFilter implements Filter {
             return;
         }
 
-        int    maxRequests = config.get().getMaxRequestsPerMinute();
-        String windowKey   = ip + ":" + config.get().getPath();
+        int    maxRequests = limitEntry.get().getValue();
+        String windowKey   = ip + ":" + limitEntry.get().getKey();
 
         ConcurrentLinkedDeque<Long> timestamps =
                 requestLog.computeIfAbsent(windowKey, k -> new ConcurrentLinkedDeque<>());
@@ -96,9 +94,8 @@ public class RateLimitFilter implements Filter {
         long windowStart = now - WINDOW_MS;
         timestamps.removeIf(t -> t < windowStart);
 
-        // If the deque is now empty this IP has had no recent activity.
-        // Remove the map entry so stale IPs don't accumulate in memory,
-        // then recreate it via computeIfAbsent for the current request.
+        // Remove stale map entry so inactive IPs don't accumulate in memory,
+        // then recreate it for the current request.
         if (timestamps.isEmpty()) {
             requestLog.remove(windowKey, timestamps);
             timestamps = requestLog.computeIfAbsent(windowKey, k -> new ConcurrentLinkedDeque<>());
@@ -120,15 +117,21 @@ public class RateLimitFilter implements Filter {
     }
 
     /**
+     * Finds the most specific (longest) path prefix that matches the given
+     * request path.
+     */
+    private Optional<Map.Entry<String, Integer>> findMatchingLimit(String path) {
+        return RATE_LIMITS.entrySet().stream()
+                .filter(e -> path.startsWith(e.getKey()))
+                .max(Comparator.comparingInt(e -> e.getKey().length()));
+    }
+
+    /**
      * Returns the originating client IP.
      *
      * Render's load balancer appends the real client IP as the LAST entry in
-     * X-Forwarded-For, not the first. Taking the first entry is unsafe because
-     * clients can inject arbitrary values at the start of the header to spoof
-     * their IP and bypass rate limiting.
-     *
-     * Taking the last entry means we always use the IP that Render's own
-     * infrastructure observed — clients cannot forge that.
+     * X-Forwarded-For. Taking the first entry is spoofable; taking the last
+     * uses the IP that Render's infrastructure observed directly.
      */
     private String resolveClientIp(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");

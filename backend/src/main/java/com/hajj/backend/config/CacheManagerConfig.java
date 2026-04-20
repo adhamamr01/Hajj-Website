@@ -34,11 +34,9 @@ public class CacheManagerConfig {
         manager.setCaches(List.of(
             //            name               maxEntries  ttlMinutes
             build("meeqat",                  100,        60),
-            build("journey",                  50,        60),
-            build("boundaries",               50,        60),
-            build("boundaryPoints",           50,        60),
-            build("apiConfig",               100,        60),
-            build("runtimeStore",            500,        -1)   // -1 = no expiry
+            build("journey",                   50,        60),
+            build("boundaries",                50,        60),
+            build("boundaryPoints",            50,        60)
         ));
         return manager;
     }
