@@ -2,15 +2,14 @@ package com.hajj.backend;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.http.*;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
  * Full-stack regression tests that boot the real application and exercise
@@ -26,126 +25,104 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Requires a running PostgreSQL instance (provided by the CI service container,
  * or docker compose locally).
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest
+@AutoConfigureMockMvc
 @TestPropertySource(properties = "app.admin.api-key=test-admin-key")
 class ApiIntegrationTest {
 
-    @LocalServerPort int port;
-    @Autowired TestRestTemplate rest;
+    @Autowired MockMvc mvc;
 
     // ── Public endpoints ──────────────────────────────────────────────────
 
     @Test
-    void meeqat_returns200WithData() {
-        ResponseEntity<String> res = rest.getForEntity(url("/api/meeqat"), String.class);
-        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(res.getBody()).contains("dhul-hulayfah");
+    void meeqat_returns200WithData() throws Exception {
+        mvc.perform(get("/api/meeqat"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value("dhul-hulayfah"));
     }
 
     @Test
-    void journey_returns200WithData() {
-        ResponseEntity<String> res = rest.getForEntity(url("/api/journey"), String.class);
-        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(res.getBody()).contains("Intention");
+    void journey_returns200WithData() throws Exception {
+        mvc.perform(get("/api/journey"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].title").value("Intention & Preparation"));
     }
 
     @Test
-    void boundary_returns200WithData() {
-        ResponseEntity<String> res = rest.getForEntity(url("/api/boundary"), String.class);
-        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+    void boundary_returns200() throws Exception {
+        mvc.perform(get("/api/boundary"))
+                .andExpect(status().isOk());
     }
 
     @Test
-    void analytics_post_returns200() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> req = new HttpEntity<>(
-                "{\"page\":\"/journey\",\"sessionId\":\"test-session\"}", headers);
-
-        ResponseEntity<Void> res = rest.postForEntity(url("/api/analytics/view"), req, Void.class);
-        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+    void analytics_post_returns200() throws Exception {
+        mvc.perform(post("/api/analytics/view")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"page\":\"/journey\",\"sessionId\":\"test-session\"}"))
+                .andExpect(status().isOk());
     }
 
     // ── Allowlist (RateLimitFilter) ───────────────────────────────────────
 
     @Test
-    void unregisteredApiPath_returns404() {
-        ResponseEntity<String> res = rest.getForEntity(url("/api/unknown-endpoint"), String.class);
-        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(res.getBody()).contains("error");
+    void unregisteredApiPath_returns404() throws Exception {
+        mvc.perform(get("/api/unknown-endpoint"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").exists());
     }
 
     // ── Spring Security ───────────────────────────────────────────────────
 
     @Test
-    void nonApiPath_returns403() {
-        ResponseEntity<String> res = rest.getForEntity(url("/some-other-path"), String.class);
-        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    void nonApiPath_returns403() throws Exception {
+        mvc.perform(get("/some-other-path"))
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    void actuatorHealth_returns200() {
-        ResponseEntity<String> res = rest.getForEntity(url("/actuator/health"), String.class);
-        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+    void actuatorHealth_returns200() throws Exception {
+        mvc.perform(get("/actuator/health"))
+                .andExpect(status().isOk());
     }
 
     @Test
-    void actuatorEnv_returns403() {
-        ResponseEntity<String> res = rest.getForEntity(url("/actuator/env"), String.class);
-        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    void actuatorEnv_returns403() throws Exception {
+        mvc.perform(get("/actuator/env"))
+                .andExpect(status().isForbidden());
     }
 
     // ── Admin auth ────────────────────────────────────────────────────────
 
     @Test
-    void adminEndpoint_withoutKey_returns401() {
-        ResponseEntity<String> res = rest.getForEntity(url("/api/admin/cache"), String.class);
-        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    void adminEndpoint_withoutKey_returns401() throws Exception {
+        mvc.perform(get("/api/admin/cache"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
-    void adminEndpoint_withWrongKey_returns401() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("X-Admin-Key", "wrong-key");
-        HttpEntity<Void> req = new HttpEntity<>(headers);
-
-        ResponseEntity<String> res = rest.exchange(
-                url("/api/admin/cache"), HttpMethod.GET, req, String.class);
-        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    void adminEndpoint_withWrongKey_returns401() throws Exception {
+        mvc.perform(get("/api/admin/cache")
+                        .header("X-Admin-Key", "wrong-key"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
-    void adminEndpoint_withCorrectKey_returns200() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("X-Admin-Key", "test-admin-key");
-        HttpEntity<Void> req = new HttpEntity<>(headers);
-
-        ResponseEntity<String> res = rest.exchange(
-                url("/api/admin/cache"), HttpMethod.GET, req, String.class);
-        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+    void adminEndpoint_withCorrectKey_returns200() throws Exception {
+        mvc.perform(get("/api/admin/cache")
+                        .header("X-Admin-Key", "test-admin-key"))
+                .andExpect(status().isOk());
     }
 
     // ── Input validation ──────────────────────────────────────────────────
 
     @Test
-    void adminContentUpdate_withOversizedField_returns400() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-Admin-Key", "test-admin-key");
-
+    void adminContentUpdate_withOversizedField_returns400() throws Exception {
         String oversizedTitle = "x".repeat(300); // exceeds @Size(max=255)
-        HttpEntity<String> req = new HttpEntity<>(
-                "{\"title\":\"" + oversizedTitle + "\"}", headers);
-
-        ResponseEntity<String> res = rest.exchange(
-                url("/api/admin/content/journey/1"), HttpMethod.PUT, req, String.class);
-        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(res.getBody()).contains("error");
-    }
-
-    // ── helpers ───────────────────────────────────────────────────────────
-
-    private String url(String path) {
-        return "http://localhost:" + port + path;
+        mvc.perform(put("/api/admin/content/journey/1")
+                        .header("X-Admin-Key", "test-admin-key")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"" + oversizedTitle + "\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").exists());
     }
 }
