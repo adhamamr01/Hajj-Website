@@ -24,6 +24,7 @@ services:
       SPRING_DATASOURCE_USERNAME: hajj
       SPRING_DATASOURCE_PASSWORD: hajj
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
     depends_on:
       db:
         condition: service_healthy

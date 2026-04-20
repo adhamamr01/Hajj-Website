@@ -4,6 +4,7 @@ import com.hajj.backend.dto.UpdateJourneyStepRequest;
 import com.hajj.backend.dto.UpdateMeeqatPointRequest;
 import com.hajj.backend.service.JourneyService;
 import com.hajj.backend.service.MeeqatService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,7 +43,7 @@ public class AdminContentController {
     public ResponseEntity<?> updateJourneyStep(
             @RequestHeader("X-Admin-Key") String key,
             @PathVariable Long id,
-            @RequestBody UpdateJourneyStepRequest req) {
+            @Valid @RequestBody UpdateJourneyStepRequest req) {
         if (!adminApiKey.equals(key)) return unauthorized();
         return ResponseEntity.ok(journeyService.update(id, req));
     }
@@ -51,7 +52,7 @@ public class AdminContentController {
     public ResponseEntity<?> updateMeeqatPoint(
             @RequestHeader("X-Admin-Key") String key,
             @PathVariable String id,
-            @RequestBody UpdateMeeqatPointRequest req) {
+            @Valid @RequestBody UpdateMeeqatPointRequest req) {
         if (!adminApiKey.equals(key)) return unauthorized();
         return ResponseEntity.ok(meeqatService.update(id, req));
     }

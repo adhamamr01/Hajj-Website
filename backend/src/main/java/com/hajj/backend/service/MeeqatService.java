@@ -5,8 +5,10 @@ import com.hajj.backend.model.MeeqatPoint;
 import com.hajj.backend.repository.MeeqatRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -37,7 +39,7 @@ public class MeeqatService {
     @Cacheable(value = "meeqat", key = "#id")
     public MeeqatPoint findById(String id) {
         return meeqatRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Meeqat point not found: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Meeqat point not found: " + id));
     }
 
     /**
@@ -50,7 +52,7 @@ public class MeeqatService {
     @Transactional
     public MeeqatPoint update(String id, UpdateMeeqatPointRequest req) {
         MeeqatPoint point = meeqatRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Meeqat point not found: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Meeqat point not found: " + id));
         if (req.name()        != null) point.setName(req.name());
         if (req.direction()   != null) point.setDirection(req.direction());
         if (req.forPilgrims() != null) point.setForPilgrims(req.forPilgrims());

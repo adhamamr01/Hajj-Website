@@ -5,8 +5,10 @@ import com.hajj.backend.model.JourneyStep;
 import com.hajj.backend.repository.JourneyRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -43,7 +45,7 @@ public class JourneyService {
     @Transactional
     public JourneyStep update(Long id, UpdateJourneyStepRequest req) {
         JourneyStep step = journeyRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Journey step not found: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Journey step not found: " + id));
         if (req.title()       != null) step.setTitle(req.title());
         if (req.description() != null) step.setDescription(req.description());
         if (req.borderColor() != null) step.setBorderColor(req.borderColor());

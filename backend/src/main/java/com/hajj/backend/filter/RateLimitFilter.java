@@ -95,6 +95,15 @@ public class RateLimitFilter implements Filter {
         // Drop timestamps outside the rolling window
         long windowStart = now - WINDOW_MS;
         timestamps.removeIf(t -> t < windowStart);
+
+        // If the deque is now empty this IP has had no recent activity.
+        // Remove the map entry so stale IPs don't accumulate in memory,
+        // then recreate it via computeIfAbsent for the current request.
+        if (timestamps.isEmpty()) {
+            requestLog.remove(windowKey, timestamps);
+            timestamps = requestLog.computeIfAbsent(windowKey, k -> new ConcurrentLinkedDeque<>());
+        }
+
         timestamps.addLast(now);
 
         if (timestamps.size() > maxRequests) {
