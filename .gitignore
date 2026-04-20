@@ -23,6 +23,3 @@ frontend/.env.production
 # OS
 .DS_Store
 Thumbs.db
-
-# Local project context (machine-specific, not for version control)
-PROJECT_CONTEXT.md
