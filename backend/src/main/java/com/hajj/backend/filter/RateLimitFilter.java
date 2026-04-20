@@ -17,33 +17,27 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 /**
  * Sliding-window IP rate limiter driven by the api_config table.
  *
- * Each API path prefix has its own limit (e.g. /api/analytics allows 60/min,
- * /api/admin allows 10/min). Limits are read from the database via
- * ApiConfigService, which caches them in Caffeine so the DB is not hit on
- * every request.
+ * Behaviour per request:
+ *   - Non-/api/* paths (health checks etc.) → pass through, no check.
+ *   - /api/* with a matching enabled api_config row → apply its per-minute limit.
+ *   - /api/* with NO matching row → reject 404. This acts as an allowlist:
+ *     adding a new endpoint requires a Flyway migration to register it first.
  *
- * The sliding window is tracked per IP per path-prefix so each endpoint
- * has an independent window — bursting on /api/meeqat does not consume
+ * The sliding window is tracked per "ip:configPath" so each endpoint has an
+ * independent window per IP — bursting on /api/analytics does not consume
  * the client's /api/admin budget.
  *
- * If a request path has no matching api_config row, a default limit of
- * DEFAULT_MAX_REQUESTS is applied and a warning is logged. This prevents
- * new endpoints from being silently unprotected — add a row to api_config
- * (via a Flyway migration) to give a new endpoint an explicit limit.
+ * Limits are read via ApiConfigService which caches them in Caffeine (warmed
+ * on startup) so no DB hit occurs per request.
  *
- * @Lazy on the ApiConfigService injection defers its creation until the
- * first request arrives, by which point the full Spring context (JPA,
- * Caffeine) is ready. Without @Lazy the filter would try to inject the
- * service before the JPA infrastructure has started.
+ * @Lazy on the ApiConfigService injection defers its creation until the first
+ * request arrives, after the full Spring context (JPA, Caffeine) is ready.
  */
 @Component
 @Order(2)   // runs after RequestLoggingFilter (Order 1)
 public class RateLimitFilter implements Filter {
 
     private static final Logger log = LoggerFactory.getLogger(RateLimitFilter.class);
-
-    /** Fallback limit applied when a path has no api_config row. */
-    private static final int  DEFAULT_MAX_REQUESTS = 20;
 
     /** Rolling window size in milliseconds (1 minute). */
     private static final long WINDOW_MS = 60_000;
@@ -72,19 +66,28 @@ public class RateLimitFilter implements Filter {
         String ip   = resolveClientIp(req);
         long   now  = System.currentTimeMillis();
 
-        // Look up the limit for this path from the DB-backed config
-        var config = apiConfigService.findMatchingConfig(path);
-        int    maxRequests;
-        String windowKey;
-
-        if (config.isPresent()) {
-            maxRequests = config.get().getMaxRequestsPerMinute();
-            windowKey   = ip + ":" + config.get().getPath();
-        } else {
-            log.warn("No api_config entry for path '{}' — applying default limit of {}/min", path, DEFAULT_MAX_REQUESTS);
-            maxRequests = DEFAULT_MAX_REQUESTS;
-            windowKey   = ip + ":default";
+        // Only apply the allowlist check to /api/* paths.
+        // Other paths (actuator, static files, etc.) pass through freely.
+        if (!path.startsWith("/api/")) {
+            chain.doFilter(request, response);
+            return;
         }
+
+        // Look up the limit for this path from the Caffeine-cached config
+        var config = apiConfigService.findMatchingConfig(path);
+
+        if (config.isEmpty()) {
+            // Path is not registered in api_config — reject before it reaches any controller.
+            // To expose a new endpoint, add a row to api_config via a Flyway migration.
+            log.warn("Rejected unregistered path '{}' from IP {}", path, ip);
+            res.setStatus(404);
+            res.setContentType("application/json");
+            res.getWriter().write("{\"error\":\"Not found\"}");
+            return;
+        }
+
+        int    maxRequests = config.get().getMaxRequestsPerMinute();
+        String windowKey   = ip + ":" + config.get().getPath();
 
         ConcurrentLinkedDeque<Long> timestamps =
                 requestLog.computeIfAbsent(windowKey, k -> new ConcurrentLinkedDeque<>());
