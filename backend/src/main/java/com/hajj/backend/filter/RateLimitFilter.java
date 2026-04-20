@@ -112,12 +112,20 @@ public class RateLimitFilter implements Filter {
 
     /**
      * Returns the originating client IP.
-     * Checks X-Forwarded-For first so proxy/CDN setups report the real IP.
+     *
+     * Render's load balancer appends the real client IP as the LAST entry in
+     * X-Forwarded-For, not the first. Taking the first entry is unsafe because
+     * clients can inject arbitrary values at the start of the header to spoof
+     * their IP and bypass rate limiting.
+     *
+     * Taking the last entry means we always use the IP that Render's own
+     * infrastructure observed — clients cannot forge that.
      */
     private String resolveClientIp(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");
         if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
+            String[] parts = forwarded.split(",");
+            return parts[parts.length - 1].trim();
         }
         return request.getRemoteAddr();
     }

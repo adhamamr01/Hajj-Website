@@ -26,9 +26,15 @@ public class AnalyticsController {
      */
     @PostMapping("/view")
     public ResponseEntity<Void> recordView(@RequestBody Map<String, String> body) {
-        String page      = body.getOrDefault("page", "unknown");
-        String sessionId = body.get("sessionId");
+        String page      = truncate(body.getOrDefault("page", "unknown"), 100);
+        String sessionId = truncate(body.get("sessionId"), 36);
         analyticsService.record(page, sessionId);
         return ResponseEntity.ok().build();
+    }
+
+    /** Silently truncates a string to maxLen characters. Handles null safely. */
+    private static String truncate(String value, int maxLen) {
+        if (value == null) return null;
+        return value.length() <= maxLen ? value : value.substring(0, maxLen);
     }
 }
