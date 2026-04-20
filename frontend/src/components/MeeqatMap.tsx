@@ -5,72 +5,9 @@ import 'leaflet/dist/leaflet.css'
 import { Navigation } from 'lucide-react'
 import { getMeeqatPoints } from '../api/client'
 import { useApi } from '../hooks/useApi'
-import ContentSkeleton from './ContentSkeleton'
+import { bearingTo, distKm, midBearing, arcPoints } from '../utils/geo'
 
 const MAKKAH: [number, number] = [21.4225, 39.8262]
-const R_EARTH = 6371
-
-// ── Geographic math ──────────────────────────────────────────────────────
-
-function toRad(d: number) { return (d * Math.PI) / 180 }
-function toDeg(r: number) { return (r * 180) / Math.PI }
-
-function bearingTo(a: [number, number], b: [number, number]): number {
-  const lat1 = toRad(a[0]), lat2 = toRad(b[0])
-  const dLng = toRad(b[1] - a[1])
-  const y = Math.sin(dLng) * Math.cos(lat2)
-  const x =
-    Math.cos(lat1) * Math.sin(lat2) -
-    Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng)
-  return (toDeg(Math.atan2(y, x)) + 360) % 360
-}
-
-function distKm(a: [number, number], b: [number, number]): number {
-  const dLat = toRad(b[0] - a[0])
-  const dLng = toRad(b[1] - a[1])
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(a[0])) * Math.cos(toRad(b[0])) * Math.sin(dLng / 2) ** 2
-  return 2 * R_EARTH * Math.asin(Math.sqrt(h))
-}
-
-function destPoint(origin: [number, number], bearingDeg: number, km: number): [number, number] {
-  const lat1 = toRad(origin[0])
-  const lng1 = toRad(origin[1])
-  const b = toRad(bearingDeg)
-  const d = km / R_EARTH
-  const lat2 = Math.asin(
-    Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(b),
-  )
-  const lng2 =
-    lng1 +
-    Math.atan2(
-      Math.sin(b) * Math.sin(d) * Math.cos(lat1),
-      Math.cos(d) - Math.sin(lat1) * Math.sin(lat2),
-    )
-  return [toDeg(lat2), toDeg(lng2)]
-}
-
-function midBearing(a: number, b: number): number {
-  let end = b
-  while (end < a) end += 360
-  return ((a + end) / 2) % 360
-}
-
-function arcPoints(
-  center: [number, number],
-  radiusKm: number,
-  startBearing: number,
-  endBearing: number,
-  steps = 80,
-): [number, number][] {
-  let end = endBearing
-  while (end <= startBearing) end += 360
-  return Array.from({ length: steps + 1 }, (_, i) => {
-    const b = startBearing + ((end - startBearing) * i) / steps
-    return destPoint(center, b, radiusKm)
-  })
-}
 
 // ── Marker helpers ───────────────────────────────────────────────────────
 
@@ -179,7 +116,7 @@ export default function MeeqatMap() {
             <p className="text-gray-500 text-sm">Loading map…</p>
           </div>
         </div>
-        <ContentSkeleton rows={1} cards />
+        <div className="h-36 bg-gray-200 rounded-xl animate-pulse" />
       </div>
     )
   }

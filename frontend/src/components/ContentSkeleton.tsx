@@ -1,22 +1,10 @@
 interface Props {
   /** Number of skeleton rows to show (default 5) */
   rows?: number
-  /** Show card-style blocks instead of text lines */
-  cards?: boolean
 }
 
 /** Inline shimmer for data that is still loading inside a page. */
-export default function ContentSkeleton({ rows = 5, cards = false }: Props) {
-  if (cards) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
-        {Array.from({ length: rows }).map((_, i) => (
-          <div key={i} className="bg-gray-100 rounded-xl h-36" />
-        ))}
-      </div>
-    )
-  }
-
+export default function ContentSkeleton({ rows = 5 }: Props) {
   return (
     <div className="space-y-6 animate-pulse">
       {Array.from({ length: rows }).map((_, i) => (

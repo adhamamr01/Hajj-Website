@@ -9,6 +9,13 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Reads API rate-limit configuration from the database and provides
+ * longest-prefix matching so each endpoint can have its own limit.
+ *
+ * Config rows live in the api_config table (seeded by Flyway migrations).
+ * To change a limit, add a new migration — do not edit the code.
+ */
 @Service
 public class ApiConfigService {
 
