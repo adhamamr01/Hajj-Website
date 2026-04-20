@@ -17,11 +17,15 @@ export default function Analytics() {
 
   useEffect(() => {
     const sid = getSessionId()
-    fetch('/api/analytics/view', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ page: pathname, sessionId: sid }),
-    }).catch(() => {})
+    // sendBeacon is guaranteed to complete even if the user navigates away
+    // mid-flight — unlike fetch, which can be cancelled on page unload.
+    navigator.sendBeacon(
+      '/api/analytics/view',
+      new Blob(
+        [JSON.stringify({ page: pathname, sessionId: sid })],
+        { type: 'application/json' },
+      ),
+    )
   }, [pathname])
 
   return null
