@@ -33,7 +33,7 @@ public class AdminAnalyticsController {
 
     @GetMapping("/summary")
     public ResponseEntity<?> summary(
-            @RequestHeader("X-Admin-Key") String key,
+            @RequestHeader(value = "X-Admin-Key", required = false) String key,
             @RequestParam(defaultValue = "30") int days) {
         if (!adminApiKey.equals(key)) return unauthorized();
         return ResponseEntity.ok(analyticsService.summary(days));
@@ -41,7 +41,7 @@ public class AdminAnalyticsController {
 
     @GetMapping("/trend")
     public ResponseEntity<?> trend(
-            @RequestHeader("X-Admin-Key") String key,
+            @RequestHeader(value = "X-Admin-Key", required = false) String key,
             @RequestParam(defaultValue = "30") int days) {
         if (!adminApiKey.equals(key)) return unauthorized();
         return ResponseEntity.ok(analyticsService.dailyTrend(days));

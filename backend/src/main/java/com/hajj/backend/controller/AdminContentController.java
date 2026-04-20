@@ -41,7 +41,7 @@ public class AdminContentController {
 
     @PutMapping("/journey/{id}")
     public ResponseEntity<?> updateJourneyStep(
-            @RequestHeader("X-Admin-Key") String key,
+            @RequestHeader(value = "X-Admin-Key", required = false) String key,
             @PathVariable Long id,
             @Valid @RequestBody UpdateJourneyStepRequest req) {
         if (!adminApiKey.equals(key)) return unauthorized();
@@ -50,7 +50,7 @@ public class AdminContentController {
 
     @PutMapping("/meeqat/{id}")
     public ResponseEntity<?> updateMeeqatPoint(
-            @RequestHeader("X-Admin-Key") String key,
+            @RequestHeader(value = "X-Admin-Key", required = false) String key,
             @PathVariable String id,
             @Valid @RequestBody UpdateMeeqatPointRequest req) {
         if (!adminApiKey.equals(key)) return unauthorized();

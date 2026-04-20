@@ -43,7 +43,7 @@ public class AdminController {
 
     /** Lists every cache with its Caffeine hit/miss statistics. */
     @GetMapping("/cache")
-    public ResponseEntity<?> listCaches(@RequestHeader("X-Admin-Key") String key) {
+    public ResponseEntity<?> listCaches(@RequestHeader(value = "X-Admin-Key", required = false) String key) {
         if (!authorized(key)) return unauthorized();
 
         Map<String, Object> stats = new LinkedHashMap<>();
@@ -55,7 +55,7 @@ public class AdminController {
 
     /** Evicts all caches. */
     @PostMapping("/cache/refresh")
-    public ResponseEntity<?> refreshAll(@RequestHeader("X-Admin-Key") String key) {
+    public ResponseEntity<?> refreshAll(@RequestHeader(value = "X-Admin-Key", required = false) String key) {
         if (!authorized(key)) return unauthorized();
 
         List<String> evicted = new ArrayList<>();
@@ -69,7 +69,7 @@ public class AdminController {
     /** Evicts a single named cache. */
     @PostMapping("/cache/refresh/{name}")
     public ResponseEntity<?> refreshOne(
-            @RequestHeader("X-Admin-Key") String key,
+            @RequestHeader(value = "X-Admin-Key", required = false) String key,
             @PathVariable String name) {
         if (!authorized(key)) return unauthorized();
 
@@ -86,7 +86,7 @@ public class AdminController {
 
     /** Returns all key/value pairs in the runtime store. */
     @GetMapping("/store")
-    public ResponseEntity<?> listStore(@RequestHeader("X-Admin-Key") String key) {
+    public ResponseEntity<?> listStore(@RequestHeader(value = "X-Admin-Key", required = false) String key) {
         if (!authorized(key)) return unauthorized();
         return ResponseEntity.ok(runtimeStore.getAll());
     }
@@ -94,7 +94,7 @@ public class AdminController {
     /** Returns the value for a single key. */
     @GetMapping("/store/{storeKey}")
     public ResponseEntity<?> getStoreValue(
-            @RequestHeader("X-Admin-Key") String key,
+            @RequestHeader(value = "X-Admin-Key", required = false) String key,
             @PathVariable String storeKey) {
         if (!authorized(key)) return unauthorized();
 
@@ -106,7 +106,7 @@ public class AdminController {
     /** Sets a key/value pair. Request body is the plain-text value. */
     @PutMapping("/store/{storeKey}")
     public ResponseEntity<?> setStoreValue(
-            @RequestHeader("X-Admin-Key") String key,
+            @RequestHeader(value = "X-Admin-Key", required = false) String key,
             @PathVariable String storeKey,
             @RequestBody String value) {
         if (!authorized(key)) return unauthorized();
@@ -118,7 +118,7 @@ public class AdminController {
     /** Deletes a key from the runtime store. */
     @DeleteMapping("/store/{storeKey}")
     public ResponseEntity<?> deleteStoreValue(
-            @RequestHeader("X-Admin-Key") String key,
+            @RequestHeader(value = "X-Admin-Key", required = false) String key,
             @PathVariable String storeKey) {
         if (!authorized(key)) return unauthorized();
 

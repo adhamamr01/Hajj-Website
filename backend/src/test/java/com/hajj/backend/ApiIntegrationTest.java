@@ -1,10 +1,12 @@
 package com.hajj.backend;
 
+import com.hajj.backend.filter.RateLimitFilter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -32,11 +34,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ApiIntegrationTest {
 
     @Autowired WebApplicationContext context;
+    @Autowired RateLimitFilter rateLimitFilter;
     MockMvc mvc;
 
     @BeforeEach
     void setup() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .apply(SecurityMockMvcConfigurers.springSecurity())
+                .addFilters(rateLimitFilter)
+                .build();
     }
 
     // ── Public endpoints ──────────────────────────────────────────────────
