@@ -26,11 +26,11 @@ Live: frontend on Netlify, backend on Render (Docker), PostgreSQL managed by Ren
 
 **No Lombok on JPA entities.** Lombok's annotation processing silently fails on Java 25 for `@Data`, `@RequiredArgsConstructor`, etc. — Jackson cannot find getters and omits fields from JSON responses. All 4 entity classes (`BoundaryPoint`, `HaramBoundary`, `JourneyStep`, `MeeqatPoint`) and all services use explicit constructors and getters/setters. Do not re-introduce Lombok on entities or Spring beans.
 
-**Flyway manages all schema changes.** Never use `ddl-auto=create` or `ddl-auto=update` in production. New migrations go in `backend/src/main/resources/db/migration/` as `V{n}__description.sql`. The `FlywayConfig` bean runs `repair()` before `migrate()` to handle partial-failure recovery on Render. The full schema lives in a single `V1__create_and_seed.sql` — do not edit it once deployed, add a new `V2__...` for any future changes.
+**Flyway manages all schema changes.** Never use `ddl-auto=create` or `ddl-auto=update` in production. New migrations go in `backend/src/main/resources/db/migration/` as `V{n}__description.sql`. The full schema lives in a single `V1__create_and_seed.sql` — do not edit it once deployed, add a new `V2__...` for any future changes. `V2__drop_api_config.sql` drops the now-unused `api_config` table.
 
-**Rate limiting is DB-driven and acts as an allowlist.** The `api_config` table (seeded by `V1__create_and_seed.sql`) stores per-path request limits. `RateLimitFilter` rejects any `/api/*` path not registered in this table with a 404 — to expose a new endpoint, add a Flyway migration inserting a row. Current limits: 20 req/min for public endpoints, 10 req/min for `/api/admin`, 60 req/min for `/api/analytics`. The cache is pre-warmed on startup via `@EventListener(ApplicationReadyEvent.class)` and injected `@Lazy` into the filter to avoid Spring context ordering issues.
+**Rate limiting is hardcoded in `RateLimitFilter`.** `RATE_LIMITS` is a `Map<String, Integer>` in the filter class — path prefix → max requests per minute. Current limits: 20 req/min for public endpoints, 10 req/min for `/api/admin`, 60 req/min for `/api/analytics`. To add a new endpoint, add an entry to the map. The filter rejects any unregistered `/api/*` path with 404.
 
-**Admin endpoints require `X-Admin-Key` header.** The key is set via the `ADMIN_API_KEY` environment variable. Default for local dev: `dev-admin-key`. Production key must be set on Render. Auth is checked manually in each admin controller — do not replace this with Spring Security roles, it is intentionally simple for a single-admin setup.
+**Admin endpoints require `X-Admin-Key` header.** The key is set via the `ADMIN_API_KEY` environment variable. Default for local dev: `dev-admin-key` (set in root `.env`). Production key set in Render dashboard. Auth is checked manually in each admin controller — do not replace this with Spring Security roles, it is intentionally simple for a single-admin setup.
 
 **Frontend API base URL** is baked in at build time via `VITE_API_BASE_URL`. Set on Netlify for production. In local dev, Vite proxies `/api/*` to `http://localhost:8080`.
 
@@ -45,10 +45,9 @@ Live: frontend on Netlify, backend on Render (Docker), PostgreSQL managed by Ren
 | `journey_step` | Seven Hajj pilgrimage steps shown as a timeline. Editable via admin API |
 | `haram_boundary` | Named sacred boundaries drawn as circles on the map (center + radius) |
 | `boundary_point` | Polygon vertices for the Haram boundary overlay, ordered by `order_index` |
-| `api_config` | Allowlist + rate limits for every `/api/*` path. Path is a prefix (e.g. `/api/meeqat` covers all sub-paths) |
 | `page_view` | Raw page-view events for analytics. `session_id` from sessionStorage for privacy-friendly unique visitor counts |
 
-Schema documentation is stored in the database itself via `COMMENT ON TABLE / COLUMN` (see `V6__schema_documentation.sql`).
+Schema documentation is stored in the database itself via `COMMENT ON TABLE / COLUMN`.
 
 ---
 
@@ -66,7 +65,7 @@ Schema documentation is stored in the database itself via `COMMENT ON TABLE / CO
 
 ### Spring Security
 - `SecurityConfig.java` — CSRF disabled, stateless sessions, `/api/**` permitted, everything else denied (`denyAll()`).
-- This locks down Spring Actuator paths. Actuator itself is also configured to only expose `/actuator/health` with `show-details=never` (see `application.properties`). The two are independent layers — Security is defence-in-depth in case the Actuator exposure config is accidentally widened.
+- Actuator configured to only expose `/actuator/health` with `show-details=never`. Security is defence-in-depth in case exposure config is accidentally widened.
 
 ---
 
@@ -86,10 +85,19 @@ Backend runs on `:8080`, frontend dev server on `:5173` (proxies `/api` to backe
 
 ## Deployment
 
-| Service | Trigger | Config |
-|---|---|---|
-| Netlify | Push to `main` | `netlify.toml` — build: `cd frontend && npm install && npm run build` |
-| Render | Push to `main` | Builds from `backend/Dockerfile`, exposes port 8080 |
+| Service | URL | Trigger | Config |
+|---|---|---|---|
+| Netlify (frontend) | `https://hajj-guide-website.netlify.app` | Push to `main` | `netlify.toml` — build: `cd frontend && npm install && npm run build` |
+| Render (backend) | `https://hajj-website.onrender.com` | Push to `main` | Builds from `backend/Dockerfile`, exposes port 8080 |
+| Render (database) | Internal to Render | — | PostgreSQL 16, managed by Render |
+
+**Render free tier note:** the backend container spins down after 15 minutes of inactivity. First request after sleep takes ~30s (Spring Boot cold start). Use UptimeRobot pinging `/actuator/health` every 5 minutes to keep it warm.
+
+**Environment variables required on Render:**
+- `SPRING_DATASOURCE_URL` — JDBC URL of the Render PostgreSQL instance
+- `SPRING_DATASOURCE_USERNAME` / `SPRING_DATASOURCE_PASSWORD` — DB credentials
+- `ADMIN_API_KEY` — secret key for `/api/admin/*` endpoints
+- `SPRING_PROFILES_ACTIVE=prod`
 
 ---
 
@@ -110,11 +118,10 @@ Sanctuary Green theme (from Claude Design). Key tokens:
 
 | Layer | File | What it tests |
 |---|---|---|
-| Backend | `RuntimeStoreTest` | In-memory key/value store |
+| Backend | `ApiIntegrationTest` | Full-stack: Security → RateLimitFilter → Controller (12 tests) |
 | Backend | `JourneyServiceTest` | `findAllOrdered()` delegation and ordering |
 | Backend | `MeeqatServiceTest` | `findAll()`, `findById()`, 404 case |
 | Backend | `BoundaryServiceTest` | `findAllBoundaries()`, `findAllBoundaryPoints()` |
-| Backend | `ApiConfigServiceTest` | Longest-prefix matching logic |
 | Frontend | `client.test.ts` | API client cache — deduplication, retry after failure, single network call |
 | Frontend | `array.test.ts` | `requireArray` utility |
 | Frontend | `useMeta.test.ts` | Document title and meta tag updates |
