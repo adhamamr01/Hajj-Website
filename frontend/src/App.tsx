@@ -6,9 +6,10 @@ import PageSkeleton from './components/PageSkeleton'
 import Analytics from './components/Analytics'
 import AppErrorBoundary from './components/AppErrorBoundary'
 
-// Home and Journey are lightweight — load eagerly
+// Home, Journey, and NotFound are lightweight — load eagerly
 import Home from './pages/Home'
 import Journey from './pages/Journey'
+import NotFound from './pages/NotFound'
 
 // Map pages pull in Leaflet (~150 KB) — code-split so the home page loads fast
 const MapRoute = lazy(() => import('./pages/MapRoute'))
@@ -28,6 +29,7 @@ export default function App() {
                 <Route path="/journey" element={<Journey />} />
                 <Route path="/map-route" element={<MapRoute />} />
                 <Route path="/map-sites" element={<MapSites />} />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
           </AppErrorBoundary>
