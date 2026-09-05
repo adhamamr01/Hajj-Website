@@ -28,10 +28,25 @@ services:
         condition: service_healthy
     ports:
       # Loopback only — not reachable from the internet (OCI's security
-      # list doesn't open 8080 either). Caddy will reach this over the
-      # internal compose network by service name once it's added; this
-      # binding just lets us curl it directly from the VM for now.
+      # list doesn't open 8080 either). Caddy reaches this over the
+      # internal compose network by service name; this binding just lets
+      # us curl it directly from the VM for debugging.
       - "127.0.0.1:8080:8080"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:

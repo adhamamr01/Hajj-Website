@@ -1,0 +1,3 @@
+80-225-76-113.sslip.io {
+	reverse_proxy backend:8080
+}
