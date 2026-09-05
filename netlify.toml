@@ -3,7 +3,7 @@
   command = "cd frontend && npm install && npm run build"
 
 # SPA catch-all — React Router handles all client-side routes.
-# API calls go directly to the Render backend via VITE_API_BASE_URL (set in
+# API calls go directly to the backend via VITE_API_BASE_URL (set in
 # Netlify environment variables), so they never hit this redirect.
 [[redirects]]
   from   = "/*"

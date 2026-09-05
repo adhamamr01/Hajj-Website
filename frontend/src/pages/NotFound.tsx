@@ -2,7 +2,10 @@ import { Link } from 'react-router-dom'
 import { useMeta } from '../hooks/useMeta'
 
 export default function NotFound() {
-  useMeta({ title: 'Page Not Found — Journey to Hajj' })
+  useMeta({
+    title: 'Page Not Found — Journey to Hajj',
+    description: 'The page you are looking for does not exist.',
+  })
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-4">
