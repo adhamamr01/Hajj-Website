@@ -7,7 +7,7 @@ An educational website about the Islamic pilgrimage of Hajj. Four pages:
 - **Meeqat Points** — interactive Leaflet map of the 5 Ihram stations
 - **Sacred Boundaries** — interactive Leaflet map of the Haram boundary polygon
 
-Live: frontend on Netlify, backend on Render (Docker), PostgreSQL managed by Render.
+Live: frontend on Netlify, backend + PostgreSQL self-hosted via Docker on an Oracle Cloud Always Free VM.
 
 ---
 
@@ -30,7 +30,7 @@ Live: frontend on Netlify, backend on Render (Docker), PostgreSQL managed by Ren
 
 **Rate limiting is hardcoded in `RateLimitFilter`.** `RATE_LIMITS` is a `Map<String, Integer>` in the filter class — path prefix → max requests per minute. Current limits: 20 req/min for public endpoints, 10 req/min for `/api/admin`, 60 req/min for `/api/analytics`. To add a new endpoint, add an entry to the map. The filter rejects any unregistered `/api/*` path with 404.
 
-**Admin endpoints require `X-Admin-Key` header.** The key is set via the `ADMIN_API_KEY` environment variable. Default for local dev: `dev-admin-key` (set in root `.env`). Production key set in Render dashboard. Auth is checked manually in each admin controller — do not replace this with Spring Security roles, it is intentionally simple for a single-admin setup.
+**Admin endpoints require `X-Admin-Key` header.** The key is set via the `ADMIN_API_KEY` environment variable. Default for local dev: `dev-admin-key` (set in root `.env`). Production key set in the `.env` file on the Oracle Cloud VM (not committed, read by `docker-compose.prod.yml`). Auth is checked manually in each admin controller — do not replace this with Spring Security roles, it is intentionally simple for a single-admin setup.
 
 **Frontend API base URL** is baked in at build time via `VITE_API_BASE_URL`. Set on Netlify for production. In local dev, Vite proxies `/api/*` to `http://localhost:8080`.
 
@@ -87,17 +87,27 @@ Backend runs on `:8080`, frontend dev server on `:5173` (proxies `/api` to backe
 
 | Service | URL | Trigger | Config |
 |---|---|---|---|
-| Netlify (frontend) | `https://hajj-guide-website.netlify.app` | Push to `main` | `netlify.toml` — build: `cd frontend && npm install && npm run build` |
-| Render (backend) | `https://hajj-website.onrender.com` | Push to `main` | Builds from `backend/Dockerfile`, exposes port 8080 |
-| Render (database) | Internal to Render | — | PostgreSQL 16, managed by Render |
+| Netlify (frontend) | `https://hajj-guide-website.netlify.app` | Push to `main` (auto-deploys) | `netlify.toml` — build: `cd frontend && npm install && npm run build` |
+| Oracle Cloud VM (backend + Postgres) | `https://80-225-76-113.sslip.io` | Manual — see below | `docker-compose.prod.yml`, `Caddyfile` |
 
-**Render free tier note:** the backend container spins down after 15 minutes of inactivity. First request after sleep takes ~30s (Spring Boot cold start). Use UptimeRobot pinging `/actuator/health` every 5 minutes to keep it warm.
+**Infrastructure:** a single Always Free `VM.Standard.A1.Flex` instance (4 OCPU / 24GB, Ubuntu 24.04) named `hajj-website-backend`, on its own VCN (`hajj-website-vcn`) with a reserved public IP (`80.225.76.113`, so it survives reboots). Everything runs as Docker containers on this one VM: Postgres 16, the Spring Boot backend, and Caddy as a reverse proxy providing free automatic HTTPS via a `sslip.io` hostname (no domain purchase needed — `sslip.io` resolves `<ip-with-dashes>.sslip.io` to that IP with zero signup).
 
-**Environment variables required on Render:**
-- `SPRING_DATASOURCE_URL` — JDBC URL of the Render PostgreSQL instance
-- `SPRING_DATASOURCE_USERNAME` / `SPRING_DATASOURCE_PASSWORD` — DB credentials
+**Deploying a backend change is manual** (unlike the frontend, which auto-deploys on push): SSH into the VM, then:
+```bash
+cd Hajj-Website
+git pull
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+**No uptime-ping workaround needed.** Unlike Render's free tier, an Always Free compute instance doesn't sleep after inactivity — there is deliberately no UptimeRobot (or equivalent) monitor.
+
+**Environment variables required on the VM** — set in a `.env` file in the repo root on the VM (never committed; `docker-compose.prod.yml` reads them):
+- `DB_PASSWORD` — Postgres password (also used as `SPRING_DATASOURCE_PASSWORD`)
 - `ADMIN_API_KEY` — secret key for `/api/admin/*` endpoints
-- `SPRING_PROFILES_ACTIVE=prod`
+
+(`SPRING_PROFILES_ACTIVE=prod` and the DB URL/username are hardcoded in `docker-compose.prod.yml` itself, not env-configured.)
+
+**Keeping this genuinely free:** stick to Always Free-eligible shapes only (this VM already uses the full 4 OCPU/24GB Ampere A1 allowance), don't enable OCI's paid Boot Volume Backup policy (back up the DB yourself via `pg_dump`, e.g. to OCI Object Storage's own Always Free 20GB tier), and don't upgrade the tenancy to Pay-As-You-Go.
 
 ---
 
