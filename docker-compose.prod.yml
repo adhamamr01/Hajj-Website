@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hajjdb
+      POSTGRES_USER: hajj
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hajj -d hajjdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/hajjdb
+      SPRING_DATASOURCE_USERNAME: hajj
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      # Loopback only — not reachable from the internet (OCI's security
+      # list doesn't open 8080 either). Caddy will reach this over the
+      # internal compose network by service name once it's added; this
+      # binding just lets us curl it directly from the VM for now.
+      - "127.0.0.1:8080:8080"
+
+volumes:
+  postgres_data:
