@@ -42,6 +42,10 @@
     scroll-behavior: smooth;
   }
 
+  :lang(ar) body {
+    font-family: 'IBM Plex Sans Arabic', 'Inter', system-ui, sans-serif;
+  }
+
   body {
     @apply antialiased font-sans text-base;
     color: var(--fg-2);
@@ -89,6 +93,22 @@
     font-size: clamp(2rem, 5vw, 3.25rem);
     letter-spacing: -0.01em;
   }
+
+  /* Arabic: Cormorant/Inter have no Arabic glyphs. Amiri for headings and the
+     brand, IBM Plex Sans Arabic for body/UI. Arabic is never italic, and
+     letter-spacing must be 0 or it breaks the joining of letters. */
+  :lang(ar) .display-font,
+  :lang(ar) .hero-title,
+  :lang(ar) h1,
+  :lang(ar) h2 {
+    font-family: 'Amiri', 'Cormorant Garamond', Georgia, serif;
+    font-style: normal;
+    letter-spacing: 0;
+  }
+
+  :lang(ar) .hero-title {
+    line-height: 1.4;
+  }
 }
 
 @layer utilities {
@@ -100,4 +120,11 @@
   .leaflet-popup-content-wrapper {
     @apply rounded-lg shadow-lg;
   }
+}
+
+/* Outside @layer on purpose: Tailwind drops layered rules whose class is not in
+   the source. Leaflet sets its own font on the container; for Arabic let map
+   popups follow the page font. */
+:lang(ar) .leaflet-container {
+  font-family: inherit;
 }

@@ -1,3 +1,5 @@
+import { useTranslation } from '../i18n/I18nProvider'
+
 interface Props {
   /** Number of skeleton rows to show (default 5) */
   rows?: number
@@ -5,8 +7,9 @@ interface Props {
 
 /** Inline shimmer for data that is still loading inside a page. */
 export default function ContentSkeleton({ rows = 5 }: Props) {
+  const { t } = useTranslation()
   return (
-    <div className="space-y-6 animate-pulse">
+    <div className="space-y-6 animate-pulse" role="status" aria-label={t('common.loading')}>
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="bg-gray-100 rounded-xl p-6 space-y-3">
           <div className="h-5 bg-gray-200 rounded w-1/3" />

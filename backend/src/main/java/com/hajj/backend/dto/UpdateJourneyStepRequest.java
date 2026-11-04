@@ -11,5 +11,7 @@ public record UpdateJourneyStepRequest(
         @Size(max = 255) String title,
         @Size(max = 10000) String description,
         @Size(max = 50)  String borderColor,
-        @Size(max = 50)  String titleColor
+        @Size(max = 50)  String titleColor,
+        @Size(max = 255) String titleAr,
+        @Size(max = 10000) String descriptionAr
 ) {}

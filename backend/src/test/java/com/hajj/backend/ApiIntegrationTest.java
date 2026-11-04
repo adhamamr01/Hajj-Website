@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import com.jayway.jsonpath.JsonPath;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -51,7 +52,8 @@ class ApiIntegrationTest {
     void meeqat_returns200WithData() throws Exception {
         mvc.perform(get("/api/meeqat"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value("dhul-hulayfah"));
+                // findAll() has no ORDER BY, so row order shifts after any UPDATE — match by id.
+                .andExpect(jsonPath("$[?(@.id == 'dhul-hulayfah')]").exists());
     }
 
     @Test
@@ -65,6 +67,47 @@ class ApiIntegrationTest {
     void boundary_returns200() throws Exception {
         mvc.perform(get("/api/boundary"))
                 .andExpect(status().isOk());
+    }
+
+    // ── Arabic content (V3 migration) ─────────────────────────────────────
+
+    @Test
+    void meeqat_includesArabicFields() throws Exception {
+        mvc.perform(get("/api/meeqat/dhul-hulayfah"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nameAr").value("ذو الحليفة (أبيار علي)"))
+                .andExpect(jsonPath("$.directionAr").value("الشمال"))
+                .andExpect(jsonPath("$.forPilgrimsAr").value("أهل المدينة ومن مر بها من الجهة الشمالية"))
+                .andExpect(jsonPath("$.distanceAr").value("نحو 450 كم"))
+                .andExpect(jsonPath("$.modernAr").isNotEmpty())
+                .andExpect(jsonPath("$.descriptionAr").isNotEmpty())
+                .andExpect(jsonPath("$.name").value("Dhul-Hulayfah (Abyar Ali)"));
+    }
+
+    @Test
+    void journey_includesArabicFields() throws Exception {
+        mvc.perform(get("/api/journey"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].titleAr").value("النية والاستعداد"))
+                .andExpect(jsonPath("$[0].descriptionAr").isNotEmpty())
+                .andExpect(jsonPath("$[6].titleAr").value("طواف الوداع"));
+    }
+
+    @Test
+    void boundary_includesArabicFields() throws Exception {
+        mvc.perform(get("/api/boundary"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].nameAr").value("المسجد الحرام"))
+                .andExpect(jsonPath("$[0].descriptionAr").isNotEmpty());
+    }
+
+    @Test
+    void boundaryPoints_haveEnglishNameAndArabicNameAr() throws Exception {
+        mvc.perform(get("/api/boundary/points"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Idhat Liban"))
+                .andExpect(jsonPath("$[0].nameAr").value("إضاء لبن"))
+                .andExpect(jsonPath("$[4].nameAr").value("التنعيم"));
     }
 
     @Test
@@ -137,5 +180,49 @@ class ApiIntegrationTest {
                         .content("{\"title\":\"" + oversizedTitle + "\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").exists());
+    }
+
+    // ── Arabic partial updates ────────────────────────────────────────────
+
+    @Test
+    void journeyUpdate_onlyArabicField_leavesEnglishUntouched() throws Exception {
+        String list = mvc.perform(get("/api/journey")).andReturn().getResponse().getContentAsString();
+        int id = JsonPath.read(list, "$[0].id");
+        String originalTitleAr = JsonPath.read(list, "$[0].titleAr");
+
+        try {
+            mvc.perform(put("/api/admin/content/journey/" + id)
+                            .header("X-Admin-Key", "test-admin-key")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"titleAr\":\"عنوان تجريبي\"}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.titleAr").value("عنوان تجريبي"))
+                    .andExpect(jsonPath("$.title").value("Intention & Preparation"))
+                    .andExpect(jsonPath("$.descriptionAr").isNotEmpty());
+        } finally {
+            mvc.perform(put("/api/admin/content/journey/" + id)
+                    .header("X-Admin-Key", "test-admin-key")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"titleAr\":\"" + originalTitleAr + "\"}"));
+        }
+    }
+
+    @Test
+    void meeqatUpdate_onlyArabicField_leavesEnglishUntouched() throws Exception {
+        try {
+            mvc.perform(put("/api/admin/content/meeqat/dhul-hulayfah")
+                            .header("X-Admin-Key", "test-admin-key")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"distanceAr\":\"نحو 451 كم\"}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.distanceAr").value("نحو 451 كم"))
+                    .andExpect(jsonPath("$.distance").value("~450 km"))
+                    .andExpect(jsonPath("$.nameAr").value("ذو الحليفة (أبيار علي)"));
+        } finally {
+            mvc.perform(put("/api/admin/content/meeqat/dhul-hulayfah")
+                    .header("X-Admin-Key", "test-admin-key")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"distanceAr\":\"نحو 450 كم\"}"));
+        }
     }
 }

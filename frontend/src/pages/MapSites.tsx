@@ -4,17 +4,18 @@ import PageHero from '../components/PageHero'
 import { getHaramBoundaries } from '../api/client'
 import { useApi } from '../hooks/useApi'
 import { useMeta } from '../hooks/useMeta'
+import { useTranslation } from '../i18n/I18nProvider'
 
 export default function MapSites() {
+  const { t, pick } = useTranslation()
   useMeta({
-    title: 'Sacred Boundaries of Makkah',
-    description:
-      'Discover the Al-Haram sanctuary boundary and the sacred zones around Makkah — their significance, rulings, and geographic extent — on an interactive map.',
+    title: t('boundariesPage.metaTitle'),
+    description: t('boundariesPage.metaDescription'),
   })
 
   const { data: boundaries, loading: bLoading, error: bError, retry: bRetry } = useApi(
     getHaramBoundaries,
-    'Failed to load boundary information. Is the backend running?',
+    t('boundariesPage.loadError'),
   )
 
   const safeBoundaries = boundaries ?? []
@@ -22,8 +23,8 @@ export default function MapSites() {
   return (
     <div className="min-h-screen">
       <PageHero
-        title="Sacred Boundaries of Makkah"
-        subtitle="Learn about the Al-Haram sanctuary and the wider area around Makkah that has special rulings and virtues."
+        title={t('boundariesPage.heroTitle')}
+        subtitle={t('boundariesPage.heroSubtitle')}
       />
 
       <section className="container-custom py-12">
@@ -35,24 +36,20 @@ export default function MapSites() {
       <section className="container-custom pb-16">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
           <div className="space-y-6 lg:col-span-2">
-            <h2 className="text-3xl font-bold text-primary mb-2">Understanding the Haram</h2>
+            <h2 className="text-3xl font-bold text-primary mb-2">{t('boundariesPage.heading')}</h2>
             <p className="text-gray-700 leading-relaxed">
-              The city of Makkah and its surrounding sanctuary, known as Al-Haram, have been honored by Allah
-              with special rulings and protection. Within these sacred boundaries, hunting game, cutting trees,
-              and causing harm are strictly prohibited, emphasizing peace and reverence.
+              {t('boundariesPage.paragraph1')}
             </p>
             <p className="text-gray-700 leading-relaxed">
-              Classical scholars describe specific boundary points around Makkah, often marked historically by
-              stones or signs. Modern maps and signposts help pilgrims know when they are entering or leaving
-              the Haram area.
+              {t('boundariesPage.paragraph2')}
             </p>
 
             {/* Boundaries error */}
             {bError && (
-              <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg flex items-center justify-between gap-4">
-                <p className="text-red-700 text-sm">{bError}</p>
+              <div className="bg-red-50 border-s-4 border-red-400 p-4 rounded-lg flex items-center justify-between gap-4">
+                <p className="text-red-700 text-sm">{t('boundariesPage.loadError')}</p>
                 <button onClick={bRetry} className="btn-primary text-sm py-1.5 px-4 flex-shrink-0">
-                  Retry
+                  {t('common.retry')}
                 </button>
               </div>
             )}
@@ -67,32 +64,29 @@ export default function MapSites() {
             {safeBoundaries.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                 {safeBoundaries.map(b => (
-                  <div key={b.id} className="card p-5 border-l-4" style={{ borderColor: b.color ?? '#999' }}>
+                  <div key={b.id} className="card p-5 border-s-4" style={{ borderColor: b.color ?? '#999' }}>
                     <h3 className="text-xl font-semibold mb-2" style={{ color: b.color ?? '#555' }}>
-                      {b.name}
+                      {pick(b.name, b.nameAr)}
                     </h3>
-                    <p className="text-gray-700 leading-relaxed">{b.description}</p>
+                    <p className="text-gray-700 leading-relaxed">{pick(b.description, b.descriptionAr)}</p>
                     <p className="mt-2 text-sm text-gray-500">
-                      This represents one reference point on the Haram boundary; the actual sanctuary line
-                      follows specific marked points and is not a perfect circle.
+                      {t('boundariesPage.cardNote')}
                     </p>
                   </div>
                 ))}
               </div>
             )}
 
-            <div className="mt-6 bg-blue-50 border-l-4 border-blue-500 p-5 rounded-lg">
+            <div className="mt-6 bg-blue-50 border-s-4 border-blue-500 p-5 rounded-lg">
               <p className="text-gray-700 leading-relaxed">
-                This page is a conceptual illustration of the sacred boundaries, designed to complement the
-                interactive Meeqat map. For precise fiqh details, pilgrims should refer to qualified scholars
-                and official guidance.
+                {t('boundariesPage.disclaimer')}
               </p>
             </div>
           </div>
 
           {/* Sidebar legend */}
           <div className="card p-6 h-fit">
-            <h3 className="text-xl font-bold text-primary mb-4 text-center">Boundary Legend</h3>
+            <h3 className="text-xl font-bold text-primary mb-4 text-center">{t('boundariesPage.legendTitle')}</h3>
             {bLoading && (
               <div className="space-y-3 animate-pulse">
                 {[1, 2].map(i => <div key={i} className="h-10 bg-gray-100 rounded" />)}
@@ -107,17 +101,16 @@ export default function MapSites() {
                     style={{ backgroundColor: b.color ?? '#999' }}
                   />
                   <div>
-                    <p className="font-semibold">{b.name}</p>
+                    <p className="font-semibold">{pick(b.name, b.nameAr)}</p>
                     <p className="text-sm text-gray-600">
-                      Conceptual marker on the Haram boundary (not to scale or exact shape).
+                      {t('boundariesPage.legendItem')}
                     </p>
                   </div>
                 </li>
               ))}
             </ul>
             <p className="mt-6 text-xs text-gray-500 text-center">
-              The map above is an educational approximation. For precise fiqh boundaries, consult qualified
-              scholars and official signage around Makkah.
+              {t('boundariesPage.legendFooter')}
             </p>
           </div>
         </div>

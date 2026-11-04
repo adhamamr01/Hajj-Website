@@ -34,6 +34,12 @@ public class HaramBoundary {
 
     private String color = "";
 
+    // Arabic counterparts — nullable; the UI falls back to the English field.
+    private String nameAr;
+
+    @Column(columnDefinition = "TEXT")
+    private String descriptionAr;
+
     public HaramBoundary() {}
 
     public Long getId() { return id; }
@@ -44,6 +50,12 @@ public class HaramBoundary {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public String getNameAr() { return nameAr; }
+    public void setNameAr(String nameAr) { this.nameAr = nameAr; }
+
+    public String getDescriptionAr() { return descriptionAr; }
+    public void setDescriptionAr(String descriptionAr) { this.descriptionAr = descriptionAr; }
 
     public double getCenterLat() { return centerLat; }
     public void setCenterLat(double centerLat) { this.centerLat = centerLat; }

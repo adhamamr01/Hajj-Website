@@ -1,10 +1,11 @@
-import { useState, useMemo, Fragment } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
+import { useState, useMemo, useEffect, Fragment } from 'react'
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Navigation } from 'lucide-react'
 import { getMeeqatPoints } from '../api/client'
 import { useApi } from '../hooks/useApi'
+import { useTranslation } from '../i18n/I18nProvider'
 import { bearingTo, distKm, midBearing, arcPoints } from '../utils/geo'
 
 const MAKKAH: [number, number] = [21.4225, 39.8262]
@@ -40,6 +41,23 @@ const kaabaIcon = L.divIcon({
   iconAnchor: [25, 25],
 })
 
+// ── Initial view ─────────────────────────────────────────────────────────
+
+// Opens the map fitted to the Meeqat points (plus Makkah) so the markers
+// don't overlap at any screen size. invalidateSize first: the container can
+// still be unmeasured when the map is created, and fitting a 0×0 map jumps
+// to max zoom.
+function FitToPoints({ points }: { points: [number, number][] }) {
+  const map = useMap()
+  useEffect(() => {
+    if (points.length === 0) return
+    map.invalidateSize()
+    map.fitBounds(L.latLngBounds([MAKKAH, ...points]), { padding: [40, 40] })
+    // Fit once per data load, not on every render (points is a new array each time).
+  }, [map, points.length])
+  return null
+}
+
 // ── Image sub-component ──────────────────────────────────────────────────
 
 function MeeqatImage({ src, alt }: { src: string; alt: string }) {
@@ -58,12 +76,14 @@ function MeeqatImage({ src, alt }: { src: string; alt: string }) {
 // ── Main component ────────────────────────────────────────────────────────
 
 export default function MeeqatMap() {
+  const { t, pick, locale } = useTranslation()
+  const popupDir = locale === 'ar' ? 'rtl' : 'ltr'
   const [showLines, setShowLines] = useState(true)
   const [showArcs, setShowArcs]   = useState(true)
 
   const { data: points, loading, error, retry } = useApi(
     getMeeqatPoints,
-    'Failed to load Meeqat data. Is the backend running?',
+    t('meeqatMap.loadError'),
   )
 
   const handleGetDirections = (lat: number, lng: number) => {
@@ -113,7 +133,7 @@ export default function MeeqatMap() {
         {/* Map shimmer — viewport-capped height */}
         <div className="rounded-xl bg-gray-200 animate-pulse" style={{ height: 'min(600px, 65vh)' }}>
           <div className="h-full flex items-center justify-center">
-            <p className="text-gray-500 text-sm">Loading map…</p>
+            <p className="text-gray-500 text-sm">{t('meeqatMap.loadingMap')}</p>
           </div>
         </div>
         <div className="h-36 bg-gray-200 rounded-xl animate-pulse" />
@@ -128,9 +148,9 @@ export default function MeeqatMap() {
         className="rounded-xl bg-red-50 border border-red-200 flex flex-col items-center justify-center gap-4 p-8"
         style={{ minHeight: 'min(300px, 50vh)' }}
       >
-        <p className="text-red-700 font-medium text-center">{error}</p>
+        <p className="text-red-700 font-medium text-center">{t('meeqatMap.loadError')}</p>
         <button onClick={retry} className="btn-primary text-sm py-2 px-5">
-          Retry
+          {t('common.retry')}
         </button>
       </div>
     )
@@ -148,7 +168,7 @@ export default function MeeqatMap() {
             showLines ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
         >
-          {showLines ? 'Hide Routes' : 'Show Routes'}
+          {showLines ? t('meeqatMap.hideRoutes') : t('meeqatMap.showRoutes')}
         </button>
         <button
           onClick={() => setShowArcs(!showArcs)}
@@ -156,12 +176,13 @@ export default function MeeqatMap() {
             showArcs ? 'bg-amber-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
         >
-          {showArcs ? 'Hide Arcs' : 'Show Arcs'}
+          {showArcs ? t('meeqatMap.hideArcs') : t('meeqatMap.showArcs')}
         </button>
       </div>
 
       {/* Map — viewport-capped height so it never exceeds the screen */}
-      <div className="rounded-xl overflow-hidden shadow-2xl">
+      {/* Maps never mirror in RTL — keep the container LTR; popups set their own direction */}
+      <div className="rounded-xl overflow-hidden shadow-2xl" dir="ltr">
         <MapContainer
           center={[22.5, 40.0]}
           zoom={6}
@@ -169,15 +190,16 @@ export default function MeeqatMap() {
           className="z-0"
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          <FitToPoints points={safePoints.map(p => [p.lat, p.lng] as [number, number])} />
 
           <Marker position={MAKKAH} icon={kaabaIcon}>
             <Popup>
-              <div className="p-2">
-                <h3 className="font-bold text-lg text-primary mb-2">🕋 Makkah al-Mukarramah</h3>
-                <p className="text-sm">The Holy City and destination of all Hajj pilgrims.</p>
+              <div className="p-2 text-start" dir={popupDir}>
+                <h3 className="font-bold text-lg text-primary mb-2">{t('meeqatMap.makkahTitle')}</h3>
+                <p className="text-sm">{t('meeqatMap.makkahText')}</p>
               </div>
             </Popup>
           </Marker>
@@ -198,21 +220,21 @@ export default function MeeqatMap() {
               >
                 {/* Popup width capped so it fits on narrow phones */}
                 <Popup maxWidth={Math.min(280, typeof window !== 'undefined' ? window.innerWidth - 48 : 280)}>
-                  <div className="p-3" style={{ width: 'min(256px, calc(100vw - 64px))' }}>
+                  <div className="p-3 text-start" dir={popupDir} style={{ width: 'min(256px, calc(100vw - 64px))' }}>
                     <h3 className="font-bold text-base mb-1" style={{ color: point.color ?? '#333' }}>
-                      {point.name}
+                      {pick(point.name, point.nameAr)}
                     </h3>
                     <p className="text-xs text-gray-500 mb-1">
-                      {point.direction ?? '—'} · {point.distance ?? '—'} from Makkah
+                      {pick(point.direction, point.directionAr) || '—'} · {pick(point.distance, point.distanceAr) || '—'} {t('meeqatPage.fromMakkah')}
                     </p>
                     <p className="text-xs text-gray-700 mb-3 leading-relaxed">
-                      <strong>For:</strong> {point.forPilgrims ?? 'General pilgrims'}
+                      <strong>{t('meeqatMap.forLabel')}</strong> {pick(point.forPilgrims, point.forPilgrimsAr) || t('meeqatMap.generalPilgrims')}
                     </p>
 
                     {(point.images?.length ?? 0) > 0 && (
                       <div className="flex gap-1.5 overflow-x-auto pb-1 mb-3">
                         {point.images!.map((src, i) => (
-                          <MeeqatImage key={i} src={src} alt={`${point.name} ${i + 1}`} />
+                          <MeeqatImage key={i} src={src} alt={t('meeqatMap.imageAlt', { name: pick(point.name, point.nameAr), n: i + 1 })} />
                         ))}
                       </div>
                     )}
@@ -223,7 +245,7 @@ export default function MeeqatMap() {
                       style={{ backgroundColor: point.color ?? '#888' }}
                     >
                       <Navigation className="w-4 h-4" />
-                      Navigate
+                      {t('meeqatMap.navigate')}
                     </button>
                   </div>
                 </Popup>
@@ -242,7 +264,7 @@ export default function MeeqatMap() {
 
       {/* Legend */}
       <div className="mt-6 bg-white p-5 rounded-xl shadow-md">
-        <h3 className="font-bold text-lg mb-4 text-primary border-b pb-2">Meeqat Points Legend</h3>
+        <h3 className="font-bold text-lg mb-4 text-primary border-b pb-2">{t('meeqatMap.legendTitle')}</h3>
         {/* Scrollable on mobile, grid on larger screens */}
         <div className="flex flex-wrap gap-3 md:grid md:grid-cols-3 lg:grid-cols-6">
           {safePoints.map(point => (
@@ -253,16 +275,16 @@ export default function MeeqatMap() {
               >
                 <span className="text-white text-xs font-bold">{abbr(point.name)}</span>
               </div>
-              <span className="text-sm truncate">{point.name.split(' (')[0]}</span>
+              <span className="text-sm truncate">{pick(point.name, point.nameAr).split(' (')[0]}</span>
             </div>
           ))}
           <div className="flex items-center gap-2">
             <span className="text-2xl flex-shrink-0">🕋</span>
-            <span className="text-sm">Makkah</span>
+            <span className="text-sm">{t('meeqatMap.legendMakkah')}</span>
           </div>
         </div>
         <p className="text-xs text-gray-500 mt-4 text-center">
-          💡 Click any marker for photos, details &amp; directions
+          {t('meeqatMap.legendTip')}
         </p>
       </div>
     </div>

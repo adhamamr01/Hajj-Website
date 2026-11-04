@@ -2,12 +2,13 @@ import Hero from '../components/Hero'
 import EntryPoints from '../components/EntryPoints'
 import InfoSection from '../components/InfoSection'
 import { useMeta } from '../hooks/useMeta'
+import { useTranslation } from '../i18n/I18nProvider'
 
 export default function Home() {
+  const { t } = useTranslation()
   useMeta({
-    title: 'Journey to Hajj',
-    description:
-      'An interactive guide to the sacred pilgrimage of Hajj — explore the Meeqat points, sacred boundaries, and the step-by-step spiritual journey.',
+    title: t('site.name'),
+    description: t('home.metaDescription'),
   })
   return (
     <>
@@ -18,12 +19,10 @@ export default function Home() {
             className="text-primary mb-4 display-font font-semibold"
             style={{ fontSize: '2.5rem' }}
           >
-            Embark on a Spiritual Journey
+            {t('home.heading')}
           </h2>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Hajj is one of the five pillars of Islam, a sacred pilgrimage to Makkah that every Muslim who is
-            physically and financially able must undertake at least once in their lifetime. Discover the profound
-            spiritual experience, the historic sites, and the journey of millions of believers.
+            {t('home.intro')}
           </p>
         </div>
         <EntryPoints />

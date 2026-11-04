@@ -1,30 +1,34 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
+import { useTranslation } from '../i18n/I18nProvider'
+import LanguageSwitch from './LanguageSwitch'
+import type { TranslationKey } from '../i18n/translations'
 
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/journey', label: 'The Journey' },
-  { href: '/map-sites', label: 'Sacred Boundaries' },
-  { href: '/map-route', label: 'Meeqat Points' },
+const navLinks: { href: string; label: TranslationKey }[] = [
+  { href: '/', label: 'nav.home' },
+  { href: '/journey', label: 'nav.journey' },
+  { href: '/map-sites', label: 'nav.boundaries' },
+  { href: '/map-route', label: 'nav.meeqat' },
 ]
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const { pathname } = useLocation()
+  const { t } = useTranslation()
 
   return (
-    <nav className="fixed top-0 left-0 right-0 bg-white shadow-md z-50">
+    <nav className="fixed top-0 inset-x-0 bg-white shadow-md z-50">
       <div className="container-custom">
         <div className="flex items-center justify-between h-16">
           <Link
             to="/"
             className="text-primary hover:text-primary-light transition-colors display-font font-semibold text-2xl"
           >
-            Journey to Hajj
+            {t('site.name')}
           </Link>
 
-          <ul className="hidden md:flex items-center space-x-8">
+          <ul className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <li key={link.href}>
                 <Link
@@ -35,16 +39,19 @@ export default function Navbar() {
                       : 'text-gray-700 hover:text-primary'
                   }`}
                 >
-                  {link.label}
+                  {t(link.label)}
                 </Link>
               </li>
             ))}
+            <li>
+              <LanguageSwitch />
+            </li>
           </ul>
 
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="md:hidden p-3 rounded-lg hover:bg-gray-100 transition-colors"
-            aria-label="Toggle menu"
+            aria-label={t('nav.toggleMenu')}
           >
             {isOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -64,10 +71,13 @@ export default function Navbar() {
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
                   >
-                    {link.label}
+                    {t(link.label)}
                   </Link>
                 </li>
               ))}
+              <li className="px-4 pt-2">
+                <LanguageSwitch />
+              </li>
             </ul>
           </div>
         )}

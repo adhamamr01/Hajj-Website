@@ -13,5 +13,11 @@ public record UpdateMeeqatPointRequest(
         @Size(max = 255)   String forPilgrims,
         @Size(max = 20)    String distance,
         @Size(max = 10000) String description,
-        @Size(max = 10)    String color
+        @Size(max = 10)    String color,
+        @Size(max = 255)   String nameAr,
+        @Size(max = 50)    String directionAr,
+        @Size(max = 255)   String forPilgrimsAr,
+        @Size(max = 20)    String distanceAr,
+        @Size(max = 255)   String modernAr,
+        @Size(max = 10000) String descriptionAr
 ) {}

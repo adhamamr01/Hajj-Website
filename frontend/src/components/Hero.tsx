@@ -1,4 +1,5 @@
 import { archSvgUrl } from '../assets/silhouettes'
+import { useTranslation } from '../i18n/I18nProvider'
 
 // 8-point Islamic star tessellation (khatam) — Sanctuary Green motif
 const STAR_PATTERN = encodeURIComponent(
@@ -12,6 +13,7 @@ const STAR_PATTERN = encodeURIComponent(
 )
 
 export default function Hero() {
+  const { t } = useTranslation()
   return (
     <section
       className="relative h-[60vh] overflow-hidden"
@@ -30,13 +32,12 @@ export default function Hero() {
       <div className="relative h-full flex items-center justify-center text-center px-4">
         <div className="max-w-4xl animate-fade-in">
           <h1
-            className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 drop-shadow-lg display-font"
-            style={{ lineHeight: 1.05 }}
+            className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 drop-shadow-lg display-font leading-[1.05] rtl:leading-[1.4]"
           >
-            The Sacred Journey of Hajj
+            {t('hero.title')}
           </h1>
           <p className="text-xl md:text-2xl text-white/95 font-light">
-            Explore the spiritual pilgrimage that millions undertake each year
+            {t('hero.subtitle')}
           </p>
         </div>
       </div>

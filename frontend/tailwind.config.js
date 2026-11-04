@@ -16,8 +16,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ["'Inter'", 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
-        display: ["'Cormorant Garamond'", "'Playfair Display'", 'Georgia', 'serif'],
+        sans: ["'Inter'", "'IBM Plex Sans Arabic'", 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        display: ["'Cormorant Garamond'", "'Playfair Display'", "'Amiri'", 'Georgia', 'serif'],
       },
       boxShadow: {
         'card': '0 8px 24px -8px rgba(15,61,39,0.2)',

@@ -30,6 +30,12 @@ public class JourneyStep {
     private String borderColor = "";
     private String titleColor  = "";
 
+    // Arabic counterparts — nullable; the UI falls back to the English field.
+    private String titleAr;
+
+    @Column(columnDefinition = "TEXT")
+    private String descriptionAr;
+
     public JourneyStep() {}
 
     public Long getId() { return id; }
@@ -43,6 +49,12 @@ public class JourneyStep {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public String getTitleAr() { return titleAr; }
+    public void setTitleAr(String titleAr) { this.titleAr = titleAr; }
+
+    public String getDescriptionAr() { return descriptionAr; }
+    public void setDescriptionAr(String descriptionAr) { this.descriptionAr = descriptionAr; }
 
     public String getBorderColor() { return borderColor; }
     public void setBorderColor(String borderColor) { this.borderColor = borderColor; }
