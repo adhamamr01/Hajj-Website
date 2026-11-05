@@ -10,6 +10,9 @@ import AppErrorBoundary from './components/AppErrorBoundary'
 import Home from './pages/Home'
 import Journey from './pages/Journey'
 import NotFound from './pages/NotFound'
+import NotAvailable from './pages/NotAvailable'
+import TokenPage from './pages/TokenPage'
+import { LINK_ONLY } from './config'
 
 // Map pages pull in Leaflet (~150 KB) — code-split so the home page loads fast
 const MapRoute = lazy(() => import('./pages/MapRoute'))
@@ -24,13 +27,23 @@ export default function App() {
         <main className="flex-1 pt-16">
           <AppErrorBoundary>
             <Suspense fallback={<PageSkeleton />}>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/journey" element={<Journey />} />
-                <Route path="/map-route" element={<MapRoute />} />
-                <Route path="/map-sites" element={<MapSites />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              {LINK_ONLY ? (
+                // Pre-launch: pages open only through secret /p/:token links.
+                <Routes>
+                  <Route path="/p/:token" element={<TokenPage />} />
+                  <Route path="*" element={<NotAvailable />} />
+                </Routes>
+              ) : (
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/journey" element={<Journey />} />
+                  <Route path="/map-route" element={<MapRoute />} />
+                  <Route path="/map-sites" element={<MapSites />} />
+                  {/* Old secret links forward to the readable URLs */}
+                  <Route path="/p/:token" element={<TokenPage />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              )}
             </Suspense>
           </AppErrorBoundary>
         </main>

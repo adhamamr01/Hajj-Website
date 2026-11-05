@@ -54,3 +54,8 @@ export interface BoundaryPoint {
   lng: number
   orderIndex: number
 }
+
+export interface LinkTarget {
+  type: string
+  key: string
+}

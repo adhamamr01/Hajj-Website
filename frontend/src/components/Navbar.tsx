@@ -4,6 +4,7 @@ import { Menu, X } from 'lucide-react'
 import { useTranslation } from '../i18n/I18nProvider'
 import LanguageSwitch from './LanguageSwitch'
 import type { TranslationKey } from '../i18n/translations'
+import { LINK_ONLY } from '../config'
 
 const navLinks: { href: string; label: TranslationKey }[] = [
   { href: '/', label: 'nav.home' },
@@ -16,6 +17,20 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const { pathname } = useLocation()
   const { t } = useTranslation()
+
+  // Link-only mode: no way to reach another page — plain brand and the language switch.
+  if (LINK_ONLY) {
+    return (
+      <nav className="fixed top-0 inset-x-0 bg-white shadow-md z-50">
+        <div className="container-custom">
+          <div className="flex items-center justify-between h-16">
+            <span className="text-primary display-font font-semibold text-2xl">{t('site.name')}</span>
+            <LanguageSwitch />
+          </div>
+        </div>
+      </nav>
+    )
+  }
 
   return (
     <nav className="fixed top-0 inset-x-0 bg-white shadow-md z-50">

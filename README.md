@@ -113,6 +113,7 @@ The app runs at `http://localhost:5173`. It calls the backend at `http://localho
 | Variable | Value |
 |---|---|
 | `VITE_API_BASE_URL` | `https://<your-render-service>.onrender.com/api` |
+| `VITE_LINK_ONLY` | `true` while pre-launch (pages open only via secret `/p/<token>` links); remove to launch. See `PROJECT_CONTEXT.md` |
 
 3. The `[[redirects]]` rule in `netlify.toml` sends all unmatched routes to `index.html` for React Router.
 

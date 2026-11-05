@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { MeeqatPoint, JourneyStep, HaramBoundary, BoundaryPoint } from '../types'
+import type { MeeqatPoint, JourneyStep, HaramBoundary, BoundaryPoint, LinkTarget } from '../types'
 import { requireArray } from '../utils/array'
 
 // In production the Netlify proxy forwards /api/* → Render backend,
@@ -14,7 +14,17 @@ const api = axios.create({
 // On failure the entry is evicted so the retry button triggers a real re-fetch.
 const cache = new Map<string, Promise<unknown>>()
 
-function cached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
+// Link-only mode: the secret token of the page being viewed, sent with content
+// requests so the backend can verify access. Set by TokenPage once the link resolves.
+let pageToken: string | null = null
+
+export const setPageToken = (token: string | null) => { pageToken = token }
+
+const tokenHeaders = () => (pageToken ? { 'X-Page-Token': pageToken } : undefined)
+
+function cached<T>(name: string, fetcher: () => Promise<T>): Promise<T> {
+  // Keyed by token as well, so data fetched under one token is never served for another.
+  const key = `${pageToken ?? ''}|${name}`
   if (!cache.has(key)) {
     const p = fetcher().catch((err: unknown) => {
       cache.delete(key)
@@ -29,13 +39,26 @@ function cached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
 export const clearCache = () => cache.clear()
 
 export const getMeeqatPoints = (): Promise<MeeqatPoint[]> =>
-  cached('meeqat', () => api.get('/meeqat').then((r) => requireArray<MeeqatPoint>(r.data, '/meeqat')))
+  cached('meeqat', () => api.get('/meeqat', { headers: tokenHeaders() }).then((r) => requireArray<MeeqatPoint>(r.data, '/meeqat')))
 
 export const getJourneySteps = (): Promise<JourneyStep[]> =>
-  cached('journey', () => api.get('/journey').then((r) => requireArray<JourneyStep>(r.data, '/journey')))
+  cached('journey', () => api.get('/journey', { headers: tokenHeaders() }).then((r) => requireArray<JourneyStep>(r.data, '/journey')))
 
 export const getHaramBoundaries = (): Promise<HaramBoundary[]> =>
-  cached('boundary', () => api.get('/boundary').then((r) => requireArray<HaramBoundary>(r.data, '/boundary')))
+  cached('boundary', () => api.get('/boundary', { headers: tokenHeaders() }).then((r) => requireArray<HaramBoundary>(r.data, '/boundary')))
 
 export const getBoundaryPoints = (): Promise<BoundaryPoint[]> =>
-  cached('boundary/points', () => api.get('/boundary/points').then((r) => requireArray<BoundaryPoint>(r.data, '/boundary/points')))
+  cached('boundary/points', () => api.get('/boundary/points', { headers: tokenHeaders() }).then((r) => requireArray<BoundaryPoint>(r.data, '/boundary/points')))
+
+/**
+ * Asks the backend what a secret link opens. Resolves to null when the token is
+ * unknown or revoked (404); any other failure rejects so the caller can offer a retry.
+ * Deliberately not cached: a "not found" must never be remembered as an answer.
+ */
+export const resolveLink = (token: string): Promise<LinkTarget | null> =>
+  api.get<LinkTarget>(`/links/${encodeURIComponent(token)}`)
+    .then((r) => r.data)
+    .catch((err: { response?: { status?: number } }) => {
+      if (err?.response?.status === 404) return null
+      return Promise.reject(err)
+    })

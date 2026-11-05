@@ -1,6 +1,7 @@
 import Hero from '../components/Hero'
 import EntryPoints from '../components/EntryPoints'
 import InfoSection from '../components/InfoSection'
+import { LINK_ONLY } from '../config'
 import { useMeta } from '../hooks/useMeta'
 import { useTranslation } from '../i18n/I18nProvider'
 
@@ -25,7 +26,7 @@ export default function Home() {
             {t('home.intro')}
           </p>
         </div>
-        <EntryPoints />
+        {!LINK_ONLY && <EntryPoints />}
       </section>
       <InfoSection />
     </>

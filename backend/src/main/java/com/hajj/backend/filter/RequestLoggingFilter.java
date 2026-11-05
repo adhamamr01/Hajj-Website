@@ -39,9 +39,14 @@ public class RequestLoggingFilter implements Filter {
             log.info("[{}] {} {} → {} ({}ms)",
                     requestId,
                     req.getMethod(),
-                    req.getRequestURI(),
+                    loggablePath(req.getRequestURI()),
                     res.getStatus(),
                     duration);
         }
+    }
+
+    /** /api/links/{token} carries a secret in the URL — keep it out of the logs. */
+    private static String loggablePath(String uri) {
+        return uri.startsWith("/api/links/") ? "/api/links/***" : uri;
     }
 }
