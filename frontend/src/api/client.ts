@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { MeeqatPoint, JourneyStep, HaramBoundary, BoundaryPoint, LinkTarget } from '../types'
+import type { MeeqatPoint, JourneyStep, HaramBoundary, BoundaryPoint, LinkTarget, Article, ArticleSummary } from '../types'
 import { requireArray } from '../utils/array'
 
 // In production the Netlify proxy forwards /api/* → Render backend,
@@ -57,6 +57,23 @@ export const getBoundaryPoints = (): Promise<BoundaryPoint[]> =>
  */
 export const resolveLink = (token: string): Promise<LinkTarget | null> =>
   api.get<LinkTarget>(`/links/${encodeURIComponent(token)}`)
+    .then((r) => r.data)
+    .catch((err: { response?: { status?: number } }) => {
+      if (err?.response?.status === 404) return null
+      return Promise.reject(err)
+    })
+
+/** Published articles for the normal (non link-only) site. Not cached: new articles show up on reload. */
+export const getArticles = (): Promise<ArticleSummary[]> =>
+  api.get('/articles').then((r) => requireArray<ArticleSummary>(r.data, '/articles'))
+
+/**
+ * One published article, or null when it does not exist, is a draft, or the token
+ * does not open it (404). Other failures reject so the caller can offer a retry.
+ * Not cached, so an edit shows up on the next visit and a 404 is never remembered.
+ */
+export const getArticle = (id: string): Promise<Article | null> =>
+  api.get<Article>(`/articles/${encodeURIComponent(id)}`, { headers: tokenHeaders() })
     .then((r) => r.data)
     .catch((err: { response?: { status?: number } }) => {
       if (err?.response?.status === 404) return null

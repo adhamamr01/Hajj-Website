@@ -59,3 +59,17 @@ export interface LinkTarget {
   type: string
   key: string
 }
+
+export interface ArticleSummary {
+  id: number
+  titleEn?: string
+  titleAr?: string
+  summaryEn?: string
+  summaryAr?: string
+  publishedAt?: string
+}
+
+export interface Article extends ArticleSummary {
+  bodyEn?: string
+  bodyAr?: string
+}

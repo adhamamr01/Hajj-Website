@@ -47,8 +47,9 @@ public class RateLimitFilter implements Filter {
         "/api/journey",   20,
         "/api/boundary",  20,
         "/api/links",     20,
+        "/api/articles",  20,
         "/api/analytics", 60,
-        "/api/admin",     10
+        "/api/admin",     30
     );
 
     /**

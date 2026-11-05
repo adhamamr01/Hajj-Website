@@ -14,6 +14,7 @@ import NotFound from './NotFound'
 
 const MapRoute = lazy(() => import('./MapRoute'))
 const MapSites = lazy(() => import('./MapSites'))
+const ArticlePage = lazy(() => import('./ArticlePage'))
 
 /** Page key (from /api/links/:token) → component, for link-only mode. */
 const PAGES: Record<string, ComponentType> = {
@@ -61,10 +62,13 @@ function ResolvedLink({ token }: { token: string }) {
   const rawKey = link?.type === 'PAGE' ? link.key : undefined
   const key = rawKey !== undefined && Object.prototype.hasOwnProperty.call(PAGES, rawKey) ? rawKey : undefined
 
+  const articleId = link?.type === 'ARTICLE' && /^\d+$/.test(link.key) ? link.key : undefined
+
   useEffect(() => {
-    // Record the page key, never the URL: the URL contains the secret.
+    // Record the page key (or "article:<id>"), never the URL: the URL contains the secret.
     if (LINK_ONLY && key) trackView(key)
-  }, [key])
+    if (LINK_ONLY && articleId) trackView(`article:${articleId}`)
+  }, [key, articleId])
 
   if (loading) return <PageSkeleton />
 
@@ -81,6 +85,7 @@ function ResolvedLink({ token }: { token: string }) {
     )
   }
 
+  if (articleId) return LINK_ONLY ? <ArticlePage id={articleId} /> : <Navigate to={`/articles/${articleId}`} replace />
   if (!key) return LINK_ONLY ? <NotAvailable /> : <NotFound />
   if (!LINK_ONLY) return <Navigate to={READABLE_PATHS[key]} replace />
 

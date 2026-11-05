@@ -22,10 +22,16 @@ export default function Analytics() {
 
   useEffect(() => {
     if (pathname.startsWith('/p/')) return
-    trackView(LINK_ONLY ? 'unavailable' : pathname)
+    trackView(LINK_ONLY ? 'unavailable' : analyticsPage(pathname))
   }, [pathname])
 
   return null
+}
+
+/** Article pages are recorded by id ("article:7"), everything else by path. */
+function analyticsPage(pathname: string): string {
+  const article = /^\/articles\/(\d+)$/.exec(pathname)
+  return article ? `article:${article[1]}` : pathname
 }
 
 /** Records one page view. `page` must never contain a secret token. */

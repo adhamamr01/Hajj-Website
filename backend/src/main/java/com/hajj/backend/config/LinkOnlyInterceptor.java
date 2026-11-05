@@ -62,16 +62,8 @@ public class LinkOnlyInterceptor implements HandlerInterceptor {
         String path = req.getRequestURI();
         if (EXEMPT.stream().anyMatch(p -> isUnder(path, p))) return true;
 
-        Set<String> allowedPages = GATED.entrySet().stream()
-                .filter(e -> isUnder(path, e.getKey()))
-                .map(Map.Entry::getValue)
-                .findFirst()
-                .orElse(Set.of());
-
         boolean allowed = pageLinkService.resolve(req.getHeader(TOKEN_HEADER))
-                .filter(l -> l.getTargetType() == PageLink.TargetType.PAGE)
-                .map(PageLink::getTargetKey)
-                .filter(allowedPages::contains)
+                .filter(link -> grants(link, path))
                 .isPresent();
         if (allowed) return true;
 
@@ -79,6 +71,21 @@ public class LinkOnlyInterceptor implements HandlerInterceptor {
         res.setContentType("application/json");
         res.getWriter().write("{\"error\":\"Not found\"}");
         return false;
+    }
+
+    /**
+     * Whether this link opens a page that uses the data at `path`.
+     * A PAGE link grants the prefixes listed in GATED; an ARTICLE link grants exactly
+     * /api/articles/{its id} (never the article list, which does not exist in link-only
+     * mode). Everything else is denied.
+     */
+    private static boolean grants(PageLink link, String path) {
+        if (link.getTargetType() == PageLink.TargetType.ARTICLE) {
+            return path.equals("/api/articles/" + link.getTargetKey());
+        }
+        return GATED.entrySet().stream()
+                .filter(e -> isUnder(path, e.getKey()))
+                .anyMatch(e -> e.getValue().contains(link.getTargetKey()));
     }
 
     private static boolean isUnder(String path, String prefix) {

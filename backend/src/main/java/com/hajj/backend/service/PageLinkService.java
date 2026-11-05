@@ -10,7 +10,9 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Creates, resolves and resets the secret links used in link-only mode.
@@ -57,14 +59,50 @@ public class PageLinkService {
     @Transactional
     public Optional<PageLink> resetPage(String key) {
         if (!PAGE_KEYS.contains(key)) return Optional.empty();
+        return Optional.of(rotate(TargetType.PAGE, key));
+    }
 
-        repo.findByTargetTypeAndTargetKeyAndRevokedAtIsNull(TargetType.PAGE, key).ifPresent(old -> {
+    /** Active secret tokens of articles, keyed by article id. */
+    @Transactional(readOnly = true)
+    public Map<Long, String> activeArticleTokens() {
+        return listActive().stream()
+                .filter(l -> l.getTargetType() == TargetType.ARTICLE)
+                .collect(Collectors.toMap(l -> Long.valueOf(l.getTargetKey()), PageLink::getToken));
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<PageLink> findArticleLink(Long articleId) {
+        return repo.findByTargetTypeAndTargetKeyAndRevokedAtIsNull(TargetType.ARTICLE, articleId.toString());
+    }
+
+    /** The article's active link, creating one if it has none. */
+    @Transactional
+    public PageLink ensureArticleLink(Long articleId) {
+        return repo.findByTargetTypeAndTargetKeyAndRevokedAtIsNull(TargetType.ARTICLE, articleId.toString())
+                .orElseGet(() -> repo.save(new PageLink(newToken(), TargetType.ARTICLE, articleId.toString())));
+    }
+
+    /** Revokes and replaces an article's link. The caller must have checked the article exists. */
+    @Transactional
+    public PageLink resetArticleLink(Long articleId) {
+        return rotate(TargetType.ARTICLE, articleId.toString());
+    }
+
+    /** Revokes an article's active link (no-op if none). */
+    @Transactional
+    public void revokeArticleLink(Long articleId) {
+        repo.findByTargetTypeAndTargetKeyAndRevokedAtIsNull(TargetType.ARTICLE, articleId.toString())
+                .ifPresent(l -> l.setRevokedAt(Instant.now()));
+    }
+
+    private PageLink rotate(TargetType type, String key) {
+        repo.findByTargetTypeAndTargetKeyAndRevokedAtIsNull(type, key).ifPresent(old -> {
             old.setRevokedAt(Instant.now());
             // Flush now: Hibernate runs inserts before updates, which would hit the
             // one-active-link-per-target unique index.
             repo.saveAndFlush(old);
         });
-        return Optional.of(repo.save(new PageLink(newToken(), TargetType.PAGE, key)));
+        return repo.save(new PageLink(newToken(), type, key));
     }
 
     /** 128 bits from SecureRandom, base64url without padding (22 chars). */

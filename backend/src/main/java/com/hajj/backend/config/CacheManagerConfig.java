@@ -36,7 +36,9 @@ public class CacheManagerConfig {
             build("meeqat",                  100,        60),
             build("journey",                   50,        60),
             build("boundaries",                50,        60),
-            build("boundaryPoints",            50,        60)
+            build("boundaryPoints",            50,        60),
+            build("articleList",                1,        60),
+            build("article",                  200,        60)
         ));
         return manager;
     }

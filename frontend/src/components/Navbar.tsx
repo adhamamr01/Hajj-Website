@@ -11,6 +11,7 @@ const navLinks: { href: string; label: TranslationKey }[] = [
   { href: '/journey', label: 'nav.journey' },
   { href: '/map-sites', label: 'nav.boundaries' },
   { href: '/map-route', label: 'nav.meeqat' },
+  { href: '/articles', label: 'nav.articles' },
 ]
 
 export default function Navbar() {

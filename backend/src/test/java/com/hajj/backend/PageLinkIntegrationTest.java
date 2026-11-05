@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Rate limits: RateLimitFilter keys its windows by the last X-Forwarded-For
  * entry, and its Spring context is shared with ApiIntegrationTest (same
  * properties), so every request here carries a fresh fake client IP. That way
- * these tests neither consume nor are throttled by the 10/min admin budget.
+ * these tests neither consume nor are throttled by the 30/min admin budget.
  */
 @SpringBootTest
 @TestPropertySource(properties = "app.admin.api-key=test-admin-key")

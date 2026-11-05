@@ -111,6 +111,38 @@
   }
 }
 
+/* Rendered Markdown (articles). Headings use the display font; Amiri for Arabic
+   comes from the :lang(ar) h1/h2 rule above. Lists indent from the start side so
+   they work in both directions. */
+@layer components {
+  .article-prose { @apply text-gray-700 leading-relaxed text-lg; }
+  .article-prose > * + * { @apply mt-4; }
+  .article-prose h1,
+  .article-prose h2,
+  .article-prose h3 {
+    @apply text-primary font-semibold;
+    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    line-height: 1.25;
+  }
+  .article-prose h1 { @apply text-4xl mt-8; }
+  .article-prose h2 { @apply text-3xl mt-8; }
+  .article-prose h3 { @apply text-2xl mt-6; }
+  :lang(ar) .article-prose h3 { font-family: 'Amiri', Georgia, serif; font-style: normal; }
+  .article-prose ul { @apply list-disc; padding-inline-start: 1.5rem; }
+  .article-prose ol { @apply list-decimal; padding-inline-start: 1.5rem; }
+  .article-prose li + li { @apply mt-1; }
+  .article-prose a { @apply text-primary underline underline-offset-2 hover:text-primary-light; }
+  .article-prose blockquote {
+    @apply text-gray-600 italic;
+    border-inline-start: 4px solid var(--primary-light);
+    padding-inline-start: 1rem;
+  }
+  :lang(ar) .article-prose blockquote { font-style: normal; }
+  .article-prose code { @apply bg-gray-100 rounded px-1 text-base; }
+  .article-prose hr { @apply border-gray-200; }
+}
+
 @layer utilities {
   /* Leaflet map z-index fix */
   .leaflet-container {
