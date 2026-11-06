@@ -40,6 +40,16 @@ public class MeeqatPoint {
 
     private String videoUrl    = "";
 
+    // Arabic counterparts — nullable; the UI falls back to the English field.
+    private String nameAr;
+    private String directionAr;
+    private String forPilgrimsAr;
+    private String distanceAr;
+    private String modernAr;
+
+    @Column(columnDefinition = "TEXT")
+    private String descriptionAr;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "meeqat_images", joinColumns = @JoinColumn(name = "meeqat_id"))
     @Column(name = "image_url")
@@ -79,6 +89,24 @@ public class MeeqatPoint {
 
     public String getVideoUrl() { return videoUrl; }
     public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
+
+    public String getNameAr() { return nameAr; }
+    public void setNameAr(String nameAr) { this.nameAr = nameAr; }
+
+    public String getDirectionAr() { return directionAr; }
+    public void setDirectionAr(String directionAr) { this.directionAr = directionAr; }
+
+    public String getForPilgrimsAr() { return forPilgrimsAr; }
+    public void setForPilgrimsAr(String forPilgrimsAr) { this.forPilgrimsAr = forPilgrimsAr; }
+
+    public String getDistanceAr() { return distanceAr; }
+    public void setDistanceAr(String distanceAr) { this.distanceAr = distanceAr; }
+
+    public String getModernAr() { return modernAr; }
+    public void setModernAr(String modernAr) { this.modernAr = modernAr; }
+
+    public String getDescriptionAr() { return descriptionAr; }
+    public void setDescriptionAr(String descriptionAr) { this.descriptionAr = descriptionAr; }
 
     public List<String> getImages() { return images; }
     public void setImages(List<String> images) { this.images = images; }

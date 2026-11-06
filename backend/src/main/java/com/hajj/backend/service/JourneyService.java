@@ -50,6 +50,8 @@ public class JourneyService {
         if (req.description() != null) step.setDescription(req.description());
         if (req.borderColor() != null) step.setBorderColor(req.borderColor());
         if (req.titleColor()  != null) step.setTitleColor(req.titleColor());
+        if (req.titleAr()       != null) step.setTitleAr(req.titleAr());
+        if (req.descriptionAr() != null) step.setDescriptionAr(req.descriptionAr());
         return journeyRepository.save(step);
     }
 }

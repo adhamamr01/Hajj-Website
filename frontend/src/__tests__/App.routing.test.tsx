@@ -1,0 +1,304 @@
+import { render, screen, waitFor, cleanup, fireEvent } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import App from '../App'
+
+// The flag is read at render time, so one file can cover both modes.
+const flags = vi.hoisted(() => ({ linkOnly: true, adminPath: undefined as string | undefined }))
+vi.mock('../config', () => ({
+  get LINK_ONLY() {
+    return flags.linkOnly
+  },
+  get ADMIN_PATH() {
+    return flags.adminPath
+  },
+}))
+
+const api = vi.hoisted(() => ({ resolveLink: vi.fn(), setPageToken: vi.fn(), getArticle: vi.fn(), getArticles: vi.fn() }))
+vi.mock('../api/client', () => api)
+
+// Page bodies are covered elsewhere (and Leaflet does not run in jsdom) — use markers.
+vi.mock('../pages/Home', () => ({ default: () => <div>HOME PAGE</div> }))
+vi.mock('../pages/Journey', () => ({ default: () => <div>JOURNEY PAGE</div> }))
+vi.mock('../pages/MapRoute', () => ({ default: () => <div>MEEQAT PAGE</div> }))
+vi.mock('../pages/MapSites', () => ({ default: () => <div>BOUNDARIES PAGE</div> }))
+
+const analyticsFetch = vi.fn(() => Promise.resolve(new Response()))
+
+function visit(path: string) {
+  window.history.pushState({}, '', path)
+  return render(<App />)
+}
+
+/** Everything the analytics call was asked to record. */
+async function beaconPages(): Promise<string[]> {
+  return (analyticsFetch.mock.calls as unknown as [string, RequestInit][]).map(
+    ([, init]) => JSON.parse(init.body as string).page,
+  )
+}
+
+beforeEach(() => {
+  flags.linkOnly = true
+  flags.adminPath = undefined
+  api.getArticle.mockReset()
+  api.getArticles.mockReset()
+  api.resolveLink.mockReset()
+  api.setPageToken.mockReset()
+  analyticsFetch.mockClear()
+  vi.stubGlobal('fetch', analyticsFetch)
+})
+
+afterEach(cleanup)
+
+describe('link-only mode on', () => {
+  it('renders the page for a valid token, keeps the URL, and registers the token', async () => {
+    api.resolveLink.mockResolvedValue({ type: 'PAGE', key: 'journey' })
+
+    visit('/p/secret-token')
+
+    expect(await screen.findByText('JOURNEY PAGE')).toBeTruthy()
+    expect(window.location.pathname).toBe('/p/secret-token')
+    expect(api.resolveLink).toHaveBeenCalledWith('secret-token')
+    expect(api.setPageToken).toHaveBeenCalledWith('secret-token')
+  })
+
+  it.each([
+    ['home', 'HOME PAGE'],
+    ['meeqat', 'MEEQAT PAGE'],
+    ['boundaries', 'BOUNDARIES PAGE'],
+  ])('maps page key %s to its page', async (key, marker) => {
+    api.resolveLink.mockResolvedValue({ type: 'PAGE', key })
+    visit('/p/t')
+    expect(await screen.findByText(marker)).toBeTruthy()
+  })
+
+  it('shows NotAvailable for an unknown token (and sends no token to the client)', async () => {
+    api.resolveLink.mockResolvedValue(null)
+
+    visit('/p/wrong')
+
+    expect(await screen.findByText("This page isn't available")).toBeTruthy()
+    expect(api.setPageToken).not.toHaveBeenCalled()
+  })
+
+  it.each(['/', '/journey', '/map-route', '/map-sites', '/p', '/anything/else'])(
+    'shows NotAvailable at %s without asking the backend',
+    async (path) => {
+      visit(path)
+
+      expect(await screen.findByText("This page isn't available")).toBeTruthy()
+      expect(api.resolveLink).not.toHaveBeenCalled()
+    },
+  )
+
+  it('offers a retry (not NotAvailable) when the lookup fails for another reason', async () => {
+    api.resolveLink.mockRejectedValueOnce(new Error('network')).mockResolvedValueOnce({ type: 'PAGE', key: 'home' })
+
+    visit('/p/t')
+
+    const retry = await screen.findByText('Retry')
+    expect(screen.queryByText("This page isn't available")).toBeNull()
+    fireEvent.click(retry)
+    expect(await screen.findByText('HOME PAGE')).toBeTruthy()
+  })
+
+  it('has no links anywhere on the NotAvailable screen or in the navbar', async () => {
+    const { container } = visit('/journey')
+    await screen.findByText("This page isn't available")
+
+    expect(container.querySelectorAll('a')).toHaveLength(0)
+    // brand is plain text, the language switch is still there
+    expect(container.querySelector('nav')?.textContent).toContain('Journey to Hajj')
+    expect(screen.getByRole('button', { name: /switch language/i })).toBeTruthy()
+  })
+
+  it('has no page links in the navbar of a resolved page', async () => {
+    api.resolveLink.mockResolvedValue({ type: 'PAGE', key: 'home' })
+    const { container } = visit('/p/t')
+    await screen.findByText('HOME PAGE')
+
+    expect(container.querySelectorAll('a')).toHaveLength(0)
+    expect(screen.queryByText('The Journey')).toBeNull()
+  })
+
+  it('never records the secret token in analytics', async () => {
+    api.resolveLink.mockResolvedValue({ type: 'PAGE', key: 'journey' })
+    visit('/p/secret-token')
+    await screen.findByText('JOURNEY PAGE')
+
+    await waitFor(async () => expect(await beaconPages()).toContain('journey'))
+    expect((await beaconPages()).join(' ')).not.toContain('secret-token')
+  })
+
+  it('records unavailable addresses as "unavailable", not their path', async () => {
+    visit('/journey')
+    await screen.findByText("This page isn't available")
+
+    await waitFor(async () => expect(await beaconPages()).toEqual(['unavailable']))
+  })
+})
+
+describe('link-only mode off', () => {
+  beforeEach(() => {
+    flags.linkOnly = false
+  })
+
+  it('forwards a valid token to the readable URL', async () => {
+    api.resolveLink.mockResolvedValue({ type: 'PAGE', key: 'journey' })
+
+    visit('/p/secret-token')
+
+    expect(await screen.findByText('JOURNEY PAGE')).toBeTruthy()
+    expect(window.location.pathname).toBe('/journey')
+    expect(api.setPageToken).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['home', '/'],
+    ['meeqat', '/map-route'],
+    ['boundaries', '/map-sites'],
+  ])('forwards page key %s to %s', async (key, path) => {
+    api.resolveLink.mockResolvedValue({ type: 'PAGE', key })
+    visit('/p/t')
+    await waitFor(() => expect(window.location.pathname).toBe(path))
+  })
+
+  it('shows the normal NotFound page for an unknown token', async () => {
+    api.resolveLink.mockResolvedValue(null)
+    visit('/p/wrong')
+    expect(await screen.findByText('Page Not Found')).toBeTruthy()
+  })
+
+  it('serves the readable routes and keeps the navbar links', async () => {
+    const { container } = visit('/journey')
+
+    expect(await screen.findByText('JOURNEY PAGE')).toBeTruthy()
+    expect(container.querySelectorAll('nav a').length).toBeGreaterThan(1)
+    expect(api.resolveLink).not.toHaveBeenCalled()
+  })
+})
+
+const article = {
+  id: 7,
+  titleEn: 'On Ihram',
+  titleAr: 'عن الإحرام',
+  summaryEn: 'English summary',
+  summaryAr: 'ملخص عربي',
+  bodyEn: 'English body with **bold** text',
+  bodyAr: 'نص عربي',
+  publishedAt: '2026-11-05T10:00:00Z',
+}
+
+describe('articles', () => {
+  describe('link-only mode on', () => {
+    it('renders an ARTICLE link in place, sends its token, and records article:<id> (never the token)', async () => {
+      api.resolveLink.mockResolvedValue({ type: 'ARTICLE', key: '7' })
+      api.getArticle.mockResolvedValue(article)
+
+      const { container } = visit('/p/secret-token')
+
+      expect(await screen.findByText('On Ihram')).toBeTruthy()
+      expect(screen.getByText('English summary')).toBeTruthy()
+      expect(container.querySelector('strong')?.textContent).toBe('bold')
+      expect(window.location.pathname).toBe('/p/secret-token')
+      expect(api.setPageToken).toHaveBeenCalledWith('secret-token')
+      expect(api.getArticle).toHaveBeenCalledWith('7')
+      await waitFor(async () => expect(await beaconPages()).toContain('article:7'))
+      expect((await beaconPages()).join(' ')).not.toContain('secret-token')
+      // no way to reach the list or any other page
+      expect(container.querySelectorAll('nav a')).toHaveLength(0)
+    })
+
+    it('shows NotAvailable when the article cannot be fetched (e.g. unpublished)', async () => {
+      api.resolveLink.mockResolvedValue({ type: 'ARTICLE', key: '7' })
+      api.getArticle.mockResolvedValue(null)
+
+      visit('/p/t')
+
+      expect(await screen.findByText("This page isn't available")).toBeTruthy()
+    })
+
+    it('shows NotAvailable for a malformed ARTICLE key', async () => {
+      api.resolveLink.mockResolvedValue({ type: 'ARTICLE', key: '../x' })
+      visit('/p/t')
+      expect(await screen.findByText("This page isn't available")).toBeTruthy()
+      expect(api.getArticle).not.toHaveBeenCalled()
+    })
+
+    it.each(['/articles', '/articles/7'])('has no article routes: %s is NotAvailable', async (path) => {
+      visit(path)
+      expect(await screen.findByText("This page isn't available")).toBeTruthy()
+      expect(api.getArticles).not.toHaveBeenCalled()
+      expect(api.getArticle).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('link-only mode off', () => {
+    beforeEach(() => {
+      flags.linkOnly = false
+    })
+
+    it('forwards an ARTICLE token to /articles/:id', async () => {
+      api.resolveLink.mockResolvedValue({ type: 'ARTICLE', key: '7' })
+      api.getArticle.mockResolvedValue(article)
+
+      visit('/p/secret-token')
+
+      expect(await screen.findByText('On Ihram')).toBeTruthy()
+      expect(window.location.pathname).toBe('/articles/7')
+      expect(api.setPageToken).not.toHaveBeenCalled()
+      await waitFor(async () => expect(await beaconPages()).toContain('article:7'))
+    })
+
+    it('lists published articles, links to them, and has an Articles link in the navbar', async () => {
+      api.getArticles.mockResolvedValue([
+        { id: 7, titleEn: 'On Ihram', titleAr: 'عن الإحرام', summaryEn: 'English summary', summaryAr: 'ملخص', publishedAt: article.publishedAt },
+      ])
+
+      const { container } = visit('/articles')
+
+      const link = await screen.findByRole('link', { name: 'On Ihram' })
+      expect(link.getAttribute('href')).toBe('/articles/7')
+      expect(container.querySelector('nav a[href="/articles"]')).toBeTruthy()
+    })
+
+    it('shows the normal NotFound page for an unknown article', async () => {
+      api.getArticle.mockResolvedValue(null)
+      visit('/articles/999')
+      expect(await screen.findByText('Page Not Found')).toBeTruthy()
+    })
+  })
+})
+
+describe('admin route', () => {
+  beforeEach(() => {
+    try {
+      sessionStorage.clear()
+    } catch {
+      // not available
+    }
+  })
+
+  it.each([true, false])('does not exist when VITE_ADMIN_PATH is unset (link-only: %s)', async (linkOnly) => {
+    flags.linkOnly = linkOnly
+    flags.adminPath = undefined
+
+    visit('/dev-admin-ui')
+
+    expect(await screen.findByText(linkOnly ? "This page isn't available" : 'Page Not Found')).toBeTruthy()
+    expect(screen.queryByText('Hajj Guide · Admin')).toBeNull()
+  })
+
+  it.each([true, false])('is served before the catch-all, without the site navbar (link-only: %s)', async (linkOnly) => {
+    flags.linkOnly = linkOnly
+    flags.adminPath = 'dev-admin-ui'
+
+    const { container } = visit('/dev-admin-ui')
+
+    expect(await screen.findByText('Hajj Guide · Admin')).toBeTruthy()
+    expect(screen.getByLabelText('Admin key')).toBeTruthy()
+    expect(container.querySelector('nav')).toBeNull()
+    expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex, nofollow')
+    expect(screen.queryByText("This page isn't available")).toBeNull()
+    expect(analyticsFetch).not.toHaveBeenCalled()
+  })
+})

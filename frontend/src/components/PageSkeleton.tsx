@@ -1,7 +1,10 @@
+import { useTranslation } from '../i18n/I18nProvider'
+
 /** Full-page shimmer shown while a lazy route chunk is downloading. */
 export default function PageSkeleton() {
+  const { t } = useTranslation()
   return (
-    <div className="min-h-screen animate-pulse">
+    <div className="min-h-screen animate-pulse" role="status" aria-label={t('common.loading')}>
       {/* Hero shimmer */}
       <div className="h-64 bg-primary/20 rounded-b-lg" />
 

@@ -59,6 +59,12 @@ public class MeeqatService {
         if (req.distance()    != null) point.setDistance(req.distance());
         if (req.description() != null) point.setDescription(req.description());
         if (req.color()       != null) point.setColor(req.color());
+        if (req.nameAr()         != null) point.setNameAr(req.nameAr());
+        if (req.directionAr()    != null) point.setDirectionAr(req.directionAr());
+        if (req.forPilgrimsAr()  != null) point.setForPilgrimsAr(req.forPilgrimsAr());
+        if (req.distanceAr()     != null) point.setDistanceAr(req.distanceAr());
+        if (req.modernAr()       != null) point.setModernAr(req.modernAr());
+        if (req.descriptionAr()  != null) point.setDescriptionAr(req.descriptionAr());
         return meeqatRepository.save(point);
     }
 }

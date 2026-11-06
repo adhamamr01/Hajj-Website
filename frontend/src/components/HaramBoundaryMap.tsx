@@ -3,6 +3,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { getBoundaryPoints } from '../api/client'
 import { useApi } from '../hooks/useApi'
+import { useTranslation } from '../i18n/I18nProvider'
 
 const MAKKAH_COORDS: [number, number] = [21.4225, 39.8262]
 
@@ -21,9 +22,11 @@ const kaabaIcon = L.divIcon({
 })
 
 export default function HaramBoundaryMap() {
+  const { t, pick, locale } = useTranslation()
+  const popupDir = locale === 'ar' ? 'rtl' : 'ltr'
   const { data: points, loading, error, retry } = useApi(
     getBoundaryPoints,
-    'Failed to load boundary data. Is the backend running?',
+    t('boundaryMap.loadError'),
   )
 
   // ── Loading state ─────────────────────────────────────────────────────
@@ -33,7 +36,7 @@ export default function HaramBoundaryMap() {
         className="rounded-xl bg-gray-200 animate-pulse flex items-center justify-center"
         style={{ height: 'min(500px, 60vh)' }}
       >
-        <p className="text-gray-500 text-sm">Loading map…</p>
+        <p className="text-gray-500 text-sm">{t('boundaryMap.loadingMap')}</p>
       </div>
     )
   }
@@ -45,9 +48,9 @@ export default function HaramBoundaryMap() {
         className="rounded-xl bg-red-50 border border-red-200 flex flex-col items-center justify-center gap-4 p-8"
         style={{ minHeight: 'min(300px, 50vh)' }}
       >
-        <p className="text-red-700 font-medium text-center">{error}</p>
+        <p className="text-red-700 font-medium text-center">{t('boundaryMap.loadError')}</p>
         <button onClick={retry} className="btn-primary text-sm py-2 px-5">
-          Retry
+          {t('common.retry')}
         </button>
       </div>
     )
@@ -57,7 +60,8 @@ export default function HaramBoundaryMap() {
   const polygon: [number, number][] = safePoints.map(p => [p.lat, p.lng])
 
   return (
-    <div className="rounded-xl overflow-hidden shadow-2xl">
+    // Maps never mirror in RTL — keep the container LTR; popups set their own direction
+    <div className="rounded-xl overflow-hidden shadow-2xl" dir="ltr">
       <MapContainer
         center={MAKKAH_COORDS}
         zoom={10}
@@ -71,9 +75,9 @@ export default function HaramBoundaryMap() {
 
         <Marker position={MAKKAH_COORDS} icon={kaabaIcon}>
           <Popup>
-            <div className="p-2">
-              <h3 className="font-bold text-lg text-primary mb-1">🕋 Masjid al-Haram</h3>
-              <p className="text-sm">Approximate center point of the Haram sanctuary in Makkah.</p>
+            <div className="p-2 text-start" dir={popupDir}>
+              <h3 className="font-bold text-lg text-primary mb-1">{t('boundaryMap.masjidTitle')}</h3>
+              <p className="text-sm">{t('boundaryMap.masjidText')}</p>
             </div>
           </Popup>
         </Marker>
@@ -81,8 +85,8 @@ export default function HaramBoundaryMap() {
         {safePoints.map(point => (
           <Marker key={point.id} position={[point.lat, point.lng]} icon={boundaryPointIcon}>
             <Popup>
-              <div className="p-2">
-                <h3 className="font-bold text-sm mb-1">{point.name || 'Boundary Point'}</h3>
+              <div className="p-2 text-start" dir={popupDir}>
+                <h3 className="font-bold text-sm mb-1">{pick(point.name, point.nameAr) || t('boundaryMap.pointFallback')}</h3>
               </div>
             </Popup>
           </Marker>
@@ -94,12 +98,9 @@ export default function HaramBoundaryMap() {
             pathOptions={{ color: '#16a34a', weight: 4, opacity: 1, fillColor: '#22c55e', fillOpacity: 0.25 }}
           >
             <Popup>
-              <div className="p-2">
-                <h3 className="font-bold text-lg text-primary mb-1">Approximate Haram Boundary</h3>
-                <p className="text-sm text-gray-700">
-                  This polygon is an educational approximation of the sanctuary boundary based on
-                  well-known points like at-Tan&apos;im, Al-Ji&apos;ranah, Idhat Liban, and Hudaybiyyah.
-                </p>
+              <div className="p-2 text-start" dir={popupDir}>
+                <h3 className="font-bold text-lg text-primary mb-1">{t('boundaryMap.polygonTitle')}</h3>
+                <p className="text-sm text-gray-700">{t('boundaryMap.polygonText')}</p>
               </div>
             </Popup>
           </Polygon>

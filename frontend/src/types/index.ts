@@ -14,6 +14,13 @@ export interface MeeqatPoint {
   description?: string
   images?: string[]
   videoUrl?: string
+  // Arabic counterparts — optional; fall back to the English field when empty
+  nameAr?: string
+  directionAr?: string
+  forPilgrimsAr?: string
+  distanceAr?: string
+  modernAr?: string
+  descriptionAr?: string
 }
 
 export interface JourneyStep {
@@ -23,6 +30,8 @@ export interface JourneyStep {
   description?: string
   borderColor?: string
   titleColor?: string
+  titleAr?: string
+  descriptionAr?: string
 }
 
 export interface HaramBoundary {
@@ -33,12 +42,34 @@ export interface HaramBoundary {
   centerLng: number
   radius: number
   color?: string
+  nameAr?: string
+  descriptionAr?: string
 }
 
 export interface BoundaryPoint {
   id: number
   name?: string
+  nameAr?: string
   lat: number
   lng: number
   orderIndex: number
+}
+
+export interface LinkTarget {
+  type: string
+  key: string
+}
+
+export interface ArticleSummary {
+  id: number
+  titleEn?: string
+  titleAr?: string
+  summaryEn?: string
+  summaryAr?: string
+  publishedAt?: string
+}
+
+export interface Article extends ArticleSummary {
+  bodyEn?: string
+  bodyAr?: string
 }

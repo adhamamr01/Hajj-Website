@@ -20,6 +20,9 @@ public class BoundaryPoint {
 
     private String name = "";
 
+    // Arabic counterparts — nullable; the UI falls back to the English field.
+    private String nameAr;
+
     @Column(nullable = false)
     private double lat;
 
@@ -36,6 +39,9 @@ public class BoundaryPoint {
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
+    public String getNameAr() { return nameAr; }
+    public void setNameAr(String nameAr) { this.nameAr = nameAr; }
 
     public double getLat() { return lat; }
     public void setLat(double lat) { this.lat = lat; }

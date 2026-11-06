@@ -23,6 +23,8 @@ services:
       SPRING_DATASOURCE_USERNAME: hajj
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       ADMIN_API_KEY: ${ADMIN_API_KEY}
+      # Pre-launch: pages open only via secret links. Set to "false" to launch.
+      SITE_LINK_ONLY: "true"
     depends_on:
       db:
         condition: service_healthy

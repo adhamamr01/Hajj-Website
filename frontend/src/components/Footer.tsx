@@ -1,6 +1,8 @@
 import { archSvgUrl } from '../assets/silhouettes'
+import { useTranslation } from '../i18n/I18nProvider'
 
 export default function Footer() {
+  const { t } = useTranslation()
   return (
     <footer className="mt-16" style={{ background: '#111827' }}>
       {/* Arch silhouette transition from page to footer */}
@@ -13,9 +15,9 @@ export default function Footer() {
 
       <div className="bg-gray-900 py-8">
         <div className="container-custom text-center">
-          <p className="text-secondary mb-1 display-font text-lg">Journey to Hajj</p>
+          <p className="text-secondary mb-1 display-font text-lg">{t('site.name')}</p>
           <p className="text-gray-400 text-sm">
-            &copy; {new Date().getFullYear()} Created with reverence and respect.
+            &copy; {new Date().getFullYear()} {t('footer.credit')}
           </p>
         </div>
       </div>

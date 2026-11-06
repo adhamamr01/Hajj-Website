@@ -42,6 +42,10 @@
     scroll-behavior: smooth;
   }
 
+  :lang(ar) body {
+    font-family: 'IBM Plex Sans Arabic', 'Inter', system-ui, sans-serif;
+  }
+
   body {
     @apply antialiased font-sans text-base;
     color: var(--fg-2);
@@ -89,6 +93,54 @@
     font-size: clamp(2rem, 5vw, 3.25rem);
     letter-spacing: -0.01em;
   }
+
+  /* Arabic: Cormorant/Inter have no Arabic glyphs. Amiri for headings and the
+     brand, IBM Plex Sans Arabic for body/UI. Arabic is never italic, and
+     letter-spacing must be 0 or it breaks the joining of letters. */
+  :lang(ar) .display-font,
+  :lang(ar) .hero-title,
+  :lang(ar) h1,
+  :lang(ar) h2 {
+    font-family: 'Amiri', 'Cormorant Garamond', Georgia, serif;
+    font-style: normal;
+    letter-spacing: 0;
+  }
+
+  :lang(ar) .hero-title {
+    line-height: 1.4;
+  }
+}
+
+/* Rendered Markdown (articles). Headings use the display font; Amiri for Arabic
+   comes from the :lang(ar) h1/h2 rule above. Lists indent from the start side so
+   they work in both directions. */
+@layer components {
+  .article-prose { @apply text-gray-700 leading-relaxed text-lg; }
+  .article-prose > * + * { @apply mt-4; }
+  .article-prose h1,
+  .article-prose h2,
+  .article-prose h3 {
+    @apply text-primary font-semibold;
+    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    line-height: 1.25;
+  }
+  .article-prose h1 { @apply text-4xl mt-8; }
+  .article-prose h2 { @apply text-3xl mt-8; }
+  .article-prose h3 { @apply text-2xl mt-6; }
+  :lang(ar) .article-prose h3 { font-family: 'Amiri', Georgia, serif; font-style: normal; }
+  .article-prose ul { @apply list-disc; padding-inline-start: 1.5rem; }
+  .article-prose ol { @apply list-decimal; padding-inline-start: 1.5rem; }
+  .article-prose li + li { @apply mt-1; }
+  .article-prose a { @apply text-primary underline underline-offset-2 hover:text-primary-light; }
+  .article-prose blockquote {
+    @apply text-gray-600 italic;
+    border-inline-start: 4px solid var(--primary-light);
+    padding-inline-start: 1rem;
+  }
+  :lang(ar) .article-prose blockquote { font-style: normal; }
+  .article-prose code { @apply bg-gray-100 rounded px-1 text-base; }
+  .article-prose hr { @apply border-gray-200; }
 }
 
 @layer utilities {
@@ -100,4 +152,11 @@
   .leaflet-popup-content-wrapper {
     @apply rounded-lg shadow-lg;
   }
+}
+
+/* Outside @layer on purpose: Tailwind drops layered rules whose class is not in
+   the source. Leaflet sets its own font on the container; for Arabic let map
+   popups follow the page font. */
+:lang(ar) .leaflet-container {
+  font-family: inherit;
 }
