@@ -22,24 +22,17 @@ vi.mock('../pages/Journey', () => ({ default: () => <div>JOURNEY PAGE</div> }))
 vi.mock('../pages/MapRoute', () => ({ default: () => <div>MEEQAT PAGE</div> }))
 vi.mock('../pages/MapSites', () => ({ default: () => <div>BOUNDARIES PAGE</div> }))
 
-const sendBeacon = vi.fn()
+const analyticsFetch = vi.fn(() => Promise.resolve(new Response()))
 
 function visit(path: string) {
   window.history.pushState({}, '', path)
   return render(<App />)
 }
 
-/** Everything the analytics beacon was asked to record. */
+/** Everything the analytics call was asked to record. */
 async function beaconPages(): Promise<string[]> {
-  return Promise.all(
-    sendBeacon.mock.calls.map(
-      ([, blob]) =>
-        new Promise<string>((resolve) => {
-          const reader = new FileReader() // jsdom's Blob has no .text()
-          reader.onload = () => resolve(JSON.parse(reader.result as string).page)
-          reader.readAsText(blob as Blob)
-        }),
-    ),
+  return (analyticsFetch.mock.calls as unknown as [string, RequestInit][]).map(
+    ([, init]) => JSON.parse(init.body as string).page,
   )
 }
 
@@ -50,8 +43,8 @@ beforeEach(() => {
   api.getArticles.mockReset()
   api.resolveLink.mockReset()
   api.setPageToken.mockReset()
-  sendBeacon.mockReset()
-  Object.defineProperty(navigator, 'sendBeacon', { value: sendBeacon, configurable: true })
+  analyticsFetch.mockClear()
+  vi.stubGlobal('fetch', analyticsFetch)
 })
 
 afterEach(cleanup)
@@ -306,6 +299,6 @@ describe('admin route', () => {
     expect(container.querySelector('nav')).toBeNull()
     expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex, nofollow')
     expect(screen.queryByText("This page isn't available")).toBeNull()
-    expect(sendBeacon).not.toHaveBeenCalled()
+    expect(analyticsFetch).not.toHaveBeenCalled()
   })
 })

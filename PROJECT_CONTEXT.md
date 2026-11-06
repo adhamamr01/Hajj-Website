@@ -58,7 +58,7 @@ Schema documentation is stored in the database itself via `COMMENT ON TABLE / CO
 ## Features
 
 ### Page analytics
-- Frontend: `Analytics.tsx` (render-less component inside `BrowserRouter`) fires `navigator.sendBeacon` on every route change. Uses `sessionStorage` UUID as session ID — resets on tab close, no personal data stored.
+- Frontend: `Analytics.tsx` (render-less component inside `BrowserRouter`) POSTs to `${VITE_API_BASE_URL}/analytics/view` with `fetch` (`keepalive`, `credentials: 'omit'`) on every route change. Not `sendBeacon`: it always sends credentials, so a cross-origin JSON beacon fails the CORS preflight. Uses `sessionStorage` UUID as session ID — resets on tab close, no personal data stored.
 - Backend: `POST /api/analytics/view` (public) → `AnalyticsService` → `page_view` table.
 - Admin queries: `GET /api/admin/analytics/summary?days=N` and `/trend?days=N` (both require `X-Admin-Key`). `days=0` means all-time.
 

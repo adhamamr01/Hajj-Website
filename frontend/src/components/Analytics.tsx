@@ -37,16 +37,20 @@ function analyticsPage(pathname: string): string {
 /** Records one page view. `page` must never contain a secret token. */
 export function trackView(page: string) {
   const sid = getSessionId()
-  // sendBeacon is guaranteed to complete even if the user navigates away
-  // mid-flight — unlike fetch, which can be cancelled on page unload.
-  navigator.sendBeacon(
-    '/api/analytics/view',
-    new Blob(
-      [JSON.stringify({ page, sessionId: sid })],
-      { type: 'application/json' },
-    ),
-  )
+  // keepalive lets the request finish even if the user navigates away.
+  // Not sendBeacon: it always sends credentials, so a cross-origin JSON beacon
+  // fails the CORS preflight (the backend is on another host in production).
+  fetch(`${API_BASE}/analytics/view`, {
+    method: 'POST',
+    keepalive: true,
+    credentials: 'omit',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ page, sessionId: sid }),
+  }).catch(() => {})
 }
+
+// Same base as the API client: the backend URL in production, the Vite proxy locally.
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
 
 function getSessionId(): string {
   let id = sessionStorage.getItem('sid')
