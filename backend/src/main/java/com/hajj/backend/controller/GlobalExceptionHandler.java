@@ -3,6 +3,7 @@ package com.hajj.backend.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -49,6 +50,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Map<String, String>> handleBadPathValue(MethodArgumentTypeMismatchException ex) {
         return ResponseEntity.status(404).body(Map.of("error", "Not found"));
+    }
+
+    /** A missing or malformed JSON body is the client's mistake, not a server error. */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, String>> handleUnreadableBody(HttpMessageNotReadableException ex) {
+        return ResponseEntity.badRequest().body(Map.of("error", "Malformed request body"));
     }
 
     @ExceptionHandler(Exception.class)

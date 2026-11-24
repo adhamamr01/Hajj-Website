@@ -118,6 +118,15 @@ class ApiIntegrationTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    void analyticsView_malformedJson_returns400() throws Exception {
+        mvc.perform(post("/api/analytics/view")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\\\"page\\\":"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Malformed request body"));
+    }
+
     // ── Allowlist (RateLimitFilter) ───────────────────────────────────────
 
     @Test

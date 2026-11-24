@@ -157,7 +157,7 @@ const en = {
     "This polygon is an educational approximation of the sanctuary boundary based on well-known points like at-Tan'im, Al-Ji'ranah, Idhat Liban, and Hudaybiyyah.",
 
   // ── Not found / errors ──
-  'notFound.metaTitle': 'Page Not Found — Journey to Hajj',
+  'notFound.metaTitle': 'Page Not Found',
   'notFound.metaDescription': 'The page you are looking for does not exist.',
   'notFound.heading': 'Page Not Found',
   'notFound.text': "The page you're looking for doesn't exist.",
@@ -330,7 +330,7 @@ const ar: Record<TranslationKey, string> = {
     'هذا المضلع تقريب تعليمي لحدود الحرم، مبني على مواضع معروفة مثل التنعيم والجعرانة وإضاء لبن والحديبية.',
 
   // ── Not found / errors ──
-  'notFound.metaTitle': 'الصفحة غير موجودة — رحلة إلى الحج',
+  'notFound.metaTitle': 'الصفحة غير موجودة',
   'notFound.metaDescription': 'الصفحة التي تبحث عنها غير موجودة.',
   'notFound.heading': 'الصفحة غير موجودة',
   'notFound.text': 'الصفحة التي تبحث عنها غير موجودة.',

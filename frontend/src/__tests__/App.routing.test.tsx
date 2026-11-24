@@ -166,6 +166,7 @@ describe('link-only mode off', () => {
     api.resolveLink.mockResolvedValue(null)
     visit('/p/wrong')
     expect(await screen.findByText('Page Not Found')).toBeTruthy()
+    expect(document.title).toBe('Page Not Found — Journey to Hajj') // site name once, not twice
   })
 
   it('serves the readable routes and keeps the navbar links', async () => {
