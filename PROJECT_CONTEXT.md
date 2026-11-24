@@ -149,7 +149,7 @@ git pull
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-**Backups:** `scripts/backup-db.sh` runs daily at 03:15 UTC from the `ubuntu` user's crontab and writes `~/backups/hajjdb-YYYY-MM-DD.sql.gz` on the VM, keeping 7 days (log in `~/backups/backup.log`). These live on the VM itself, so copy one off the VM now and then (`scp`), since a deleted VM takes them with it. Restore: `gunzip -c <file> | docker exec -i hajj-website-db-1 psql -U hajj hajjdb` into an empty database. After recreating the VM, reinstall the cron line from the script's header.
+**Backups:** `scripts/backup-db.sh` runs daily at 03:15 UTC from the `ubuntu` user's crontab and writes `~/backups/hajjdb-YYYY-MM-DD.sql.gz` on the VM, keeping 7 days (log in `~/backups/backup.log`). It also uploads each backup to the **private** OCI bucket `hajj-website-backups` through a write-only PAR (`BACKUP_PAR_URL` in the VM `.env`), as `daily/hajjdb-<Mon..Sun>.sql.gz` and, on the 1st, `monthly/hajjdb-<01..12>.sql.gz`; overwriting fixed names keeps 7 daily + 12 monthly copies with no lifecycle rule. Those survive losing the VM; download one from the bucket in the OCI console to restore. Restore: `gunzip -c <file> | docker exec -i hajj-website-db-1 psql -U hajj hajjdb` into an empty database. After recreating the VM, reinstall the cron line from the script's header.
 
 **No uptime-ping workaround needed.** Unlike Render's free tier, an Always Free compute instance doesn't sleep after inactivity — there is deliberately no UptimeRobot (or equivalent) monitor.
 
