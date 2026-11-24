@@ -79,9 +79,9 @@ While pre-launch, visitors open a page only through an unguessable link the owne
 - **Frontend:** with the switch on, only `/p/:token` (resolved by `TokenPage`, URL stays `/p/token`) and the NotAvailable screen exist; Navbar shows the brand (not a link) and the language switch; Home hides the entry cards; the build adds `<meta name="robots" content="noindex, nofollow">` and a disallow-all `robots.txt` (`vite.config.ts` plugin). Analytics records the page key (or `unavailable`), never the token. The API client sends `X-Page-Token` on content requests and keys its cache by token.
 - **Getting the links** (placeholder key — use the real `ADMIN_API_KEY`):
   ```bash
-  curl -s https://80-225-76-113.sslip.io/api/admin/links -H "X-Admin-Key: <ADMIN_API_KEY>"
+  curl -s https://158-101-237-178.sslip.io/api/admin/links -H "X-Admin-Key: <ADMIN_API_KEY>"
   # → [{"type":"PAGE","key":"journey","token":"...","createdAt":"..."}, ...]   share https://hajj-guide-website.netlify.app/p/<token>
-  curl -s -X POST https://80-225-76-113.sslip.io/api/admin/links/PAGE/journey/reset -H "X-Admin-Key: <ADMIN_API_KEY>"
+  curl -s -X POST https://158-101-237-178.sslip.io/api/admin/links/PAGE/journey/reset -H "X-Admin-Key: <ADMIN_API_KEY>"
   ```
 - **Launching:** set `SITE_LINK_ONLY` to `false` in `docker-compose.prod.yml` and redeploy the backend; remove `VITE_LINK_ONLY` (or set it to anything but `true`) on Netlify and redeploy the frontend. Previously shared `/p/<token>` links then forward to the readable URLs.
 
@@ -129,9 +129,9 @@ Backend runs on `:8080`, frontend dev server on `:5173` (proxies `/api` to backe
 | Service | URL | Trigger | Config |
 |---|---|---|---|
 | Netlify (frontend) | `https://hajj-guide-website.netlify.app` | Push to `main` (auto-deploys) | `netlify.toml` — build: `cd frontend && npm install && npm run build` |
-| Oracle Cloud VM (backend + Postgres) | `https://80-225-76-113.sslip.io` | Manual — see below | `docker-compose.prod.yml`, `Caddyfile` |
+| Oracle Cloud VM (backend + Postgres) | `https://158-101-237-178.sslip.io` | Manual — see below | `docker-compose.prod.yml`, `Caddyfile` |
 
-**Infrastructure:** a single Always Free `VM.Standard.A1.Flex` instance (4 OCPU / 24GB, Ubuntu 24.04) named `hajj-website-backend`, on its own VCN (`hajj-website-vcn`) with a reserved public IP (`80.225.76.113`, so it survives reboots). Everything runs as Docker containers on this one VM: Postgres 16, the Spring Boot backend, and Caddy as a reverse proxy providing free automatic HTTPS via a `sslip.io` hostname (no domain purchase needed — `sslip.io` resolves `<ip-with-dashes>.sslip.io` to that IP with zero signup).
+**Infrastructure:** a single Always Free `VM.Standard.E2.1.Micro` instance (1/8 OCPU / 1GB RAM, Ubuntu 24.04, plus a 2GB swap file) named `hajj-website-backend`. It replaced the original A1.Flex VM, which disappeared from the tenancy in November 2026 (A1 was out of capacity when it was recreated). The backend heap is capped at 256MB via `JAVA_TOOL_OPTIONS` in `docker-compose.prod.yml`; `--build` on this VM takes 10–20 minutes. It is on its own VCN (`hajj-website-vcn`) with public IP `158.101.237.178` (make it a reserved IP so it survives a stop/start; if it changes, update `Caddyfile` and Netlify's `VITE_API_BASE_URL`). Everything runs as Docker containers on this one VM: Postgres 16, the Spring Boot backend, and Caddy as a reverse proxy providing free automatic HTTPS via a `sslip.io` hostname (no domain purchase needed — `sslip.io` resolves `<ip-with-dashes>.sslip.io` to that IP with zero signup).
 
 **Deploying a backend change is manual** (unlike the frontend, which auto-deploys on push): SSH into the VM, then:
 ```bash
@@ -148,7 +148,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 (`SPRING_PROFILES_ACTIVE=prod` and the DB URL/username are hardcoded in `docker-compose.prod.yml` itself, not env-configured.)
 
-**Keeping this genuinely free:** stick to Always Free-eligible shapes only (this VM already uses the full 4 OCPU/24GB Ampere A1 allowance), don't enable OCI's paid Boot Volume Backup policy (back up the DB yourself via `pg_dump`, e.g. to OCI Object Storage's own Always Free 20GB tier), and don't upgrade the tenancy to Pay-As-You-Go.
+**Keeping this genuinely free:** stick to Always Free-eligible shapes only (`VM.Standard.E2.1.Micro`, up to 2 per tenancy, or Ampere A1 up to 4 OCPU/24GB total), don't enable OCI's paid Boot Volume Backup policy (back up the DB yourself via `pg_dump`, e.g. to OCI Object Storage's own Always Free 20GB tier), and don't upgrade the tenancy to Pay-As-You-Go.
 
 ---
 
