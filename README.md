@@ -115,6 +115,7 @@ The app runs at `http://localhost:5173`. It calls the backend at `http://localho
 | `VITE_API_BASE_URL` | `https://<your-render-service>.onrender.com/api` |
 | `VITE_LINK_ONLY` | `true` while pre-launch (pages open only via secret `/p/<token>` links); remove to launch. See `PROJECT_CONTEXT.md` |
 | `VITE_ADMIN_PATH` | A random string to enable the admin tool at `/<that string>` (articles and secret links); leave unset to disable it. See `PROJECT_CONTEXT.md` |
+| `VITE_IMAGE_BASE_URL` | Public base address of the article-image bucket (`https://objectstorage.<region>.oraclecloud.com/n/<namespace>/b/<bucket>/o/`); unset = no images render. The backend needs `IMAGE_UPLOAD_PAR_URL` for uploads. See `PROJECT_CONTEXT.md` |
 
 3. The `[[redirects]]` rule in `netlify.toml` sends all unmatched routes to `index.html` for React Router.
 

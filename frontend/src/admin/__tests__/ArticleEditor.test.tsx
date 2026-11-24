@@ -8,7 +8,12 @@ const api = vi.hoisted(() => ({
   updateArticle: vi.fn(),
   publishArticle: vi.fn(),
   unpublishArticle: vi.fn(),
+  uploadImage: vi.fn(),
 }))
+
+// jsdom has no canvas, so the resize step is replaced.
+const prepareImage = vi.hoisted(() => vi.fn())
+vi.mock('../imageTools', () => ({ prepareImage }))
 
 vi.mock('../adminApi', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../adminApi')>()),
@@ -45,6 +50,7 @@ function fillEverything() {
 
 beforeEach(() => {
   Object.values(api).forEach((f) => f.mockReset())
+  prepareImage.mockReset()
   onSaved.mockReset()
   onBack.mockReset()
   onAuthError.mockReset()
@@ -104,11 +110,11 @@ describe('publish readiness', () => {
     expect(screen.getByLabelText('Title').closest('fieldset')?.getAttribute('dir')).toBe('ltr')
   })
 
-  it('has a disabled photo button explaining images are coming', () => {
+  it('has an enabled photo button that opens a picker limited to JPEG, PNG and WebP', () => {
     open()
-    const photo = screen.getAllByRole('button', { name: /insert photo/i })[0] as HTMLButtonElement
-    expect(photo.disabled).toBe(true)
-    expect(photo.getAttribute('title')).toBe('Images coming soon')
+    const photo = screen.getByRole('button', { name: 'Insert photo (English body)' }) as HTMLButtonElement
+    expect(photo.disabled).toBe(false)
+    expect(screen.getByTestId('photo-input-en').getAttribute('accept')).toBe('image/jpeg,image/png,image/webp')
   })
 })
 
@@ -271,5 +277,91 @@ describe('toolbar', () => {
 
     expect(body.value).toBe('make **this** bold')
     expect((screen.getByLabelText('النص (Markdown)') as HTMLTextAreaElement).value).toBe('')
+  })
+})
+
+describe('photo upload', () => {
+  const choose = (lang: 'en' | 'ar') =>
+    fireEvent.change(screen.getByTestId(`photo-input-${lang}`), {
+      target: { files: [new File(['x'], 'photo.jpg', { type: 'image/jpeg' })] },
+    })
+
+  it('resizes, uploads and inserts the image at the cursor with the cursor in the alt text', async () => {
+    const resized = new Blob(['small'], { type: 'image/webp' })
+    prepareImage.mockResolvedValue(resized)
+    api.uploadImage.mockResolvedValue('https://bucket.example/o/articles/a.webp')
+    open()
+    const body = screen.getByLabelText('Body (Markdown)') as HTMLTextAreaElement
+    fireEvent.change(body, { target: { value: 'before after' } })
+    body.setSelectionRange(7, 7)
+
+    choose('en')
+
+    await waitFor(() => expect(body.value).toBe('before ![](https://bucket.example/o/articles/a.webp)after'))
+    expect(api.uploadImage).toHaveBeenCalledWith('k', resized)
+    expect(body.selectionStart).toBe(9)
+    expect(body.selectionEnd).toBe(9)
+    expect(screen.queryByText('Uploading…')).toBeNull()
+    expect((screen.getByLabelText('النص (Markdown)') as HTMLTextAreaElement).value).toBe('')
+  })
+
+  it('shows Uploading… and locks the body while the upload runs', async () => {
+    prepareImage.mockResolvedValue(new Blob(['x'], { type: 'image/webp' }))
+    let finish: (url: string) => void = () => {}
+    api.uploadImage.mockReturnValue(new Promise<string>((r) => (finish = r)))
+    open()
+
+    choose('en')
+
+    expect(await screen.findByText('Uploading…')).toBeTruthy()
+    expect((screen.getByLabelText('Body (Markdown)') as HTMLTextAreaElement).readOnly).toBe(true)
+    expect((screen.getByRole('button', { name: 'Insert photo (English body)' }) as HTMLButtonElement).disabled).toBe(true)
+
+    finish('https://bucket.example/o/articles/a.webp')
+    await waitFor(() => expect(screen.queryByText('Uploading…')).toBeNull())
+    expect((screen.getByLabelText('Body (Markdown)') as HTMLTextAreaElement).readOnly).toBe(false)
+  })
+
+  it('shows the server message when the upload fails, and leaves the text alone', async () => {
+    prepareImage.mockResolvedValue(new Blob(['x'], { type: 'image/webp' }))
+    api.uploadImage.mockRejectedValue({ response: { status: 413, data: { error: 'The image is larger than 5 MB' } } })
+    open()
+    type('Body (Markdown)', 'text')
+
+    choose('en')
+
+    expect((await screen.findByRole('alert')).textContent).toBe('The image is larger than 5 MB')
+    expect((screen.getByLabelText('Body (Markdown)') as HTMLTextAreaElement).value).toBe('text')
+  })
+
+  it('explains when uploads are not set up on the server', async () => {
+    prepareImage.mockResolvedValue(new Blob(['x'], { type: 'image/webp' }))
+    api.uploadImage.mockRejectedValue({ response: { status: 503, data: { error: 'Image uploads are not configured' } } })
+    open()
+
+    choose('ar')
+
+    expect((await screen.findByRole('alert')).textContent).toContain("Image uploads aren't set up on the server yet")
+  })
+
+  it('returns to the key screen when the key is rejected', async () => {
+    prepareImage.mockResolvedValue(new Blob(['x'], { type: 'image/webp' }))
+    const { AdminAuthError } = await import('../adminApi')
+    api.uploadImage.mockRejectedValue(new AdminAuthError())
+    open()
+
+    choose('en')
+
+    await waitFor(() => expect(onAuthError).toHaveBeenCalled())
+  })
+
+  it('reports a photo the browser cannot read', async () => {
+    prepareImage.mockRejectedValue(new Error('bad image'))
+    open()
+
+    choose('en')
+
+    expect((await screen.findByRole('alert')).textContent).toContain('Something went wrong')
+    expect(api.uploadImage).not.toHaveBeenCalled()
   })
 })

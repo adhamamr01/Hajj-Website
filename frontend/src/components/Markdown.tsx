@@ -1,4 +1,5 @@
 import ReactMarkdown from 'react-markdown'
+import { IMAGE_BASE_URL } from '../config'
 
 const SAFE_PROTOCOLS = ['http:', 'https:', 'mailto:']
 
@@ -16,17 +17,33 @@ export function safeUrl(url: string): string {
 }
 
 /**
+ * Whether `src` is an https address inside the image bucket (VITE_IMAGE_BASE_URL).
+ * Compared after URL parsing, so "..", encoded dots and odd casing cannot escape the prefix.
+ */
+function isBucketImage(src: string | undefined): src is string {
+  if (!IMAGE_BASE_URL || !src) return false
+  try {
+    const url = new URL(src)
+    return url.protocol === 'https:' && url.href.startsWith(IMAGE_BASE_URL)
+  } catch {
+    return false
+  }
+}
+
+/**
  * Renders trusted-format Markdown. Raw HTML in the source is shown as plain text
- * (react-markdown escapes it; rehype-raw is deliberately NOT used). Images are not
- * rendered yet. External links open in a new tab.
+ * (react-markdown escapes it; rehype-raw is deliberately NOT used). Images render
+ * only from the image bucket; any other image renders nothing. External links open
+ * in a new tab.
  */
 export default function Markdown({ children }: { children: string }) {
   return (
     <div className="article-prose">
       <ReactMarkdown
         urlTransform={safeUrl}
-        disallowedElements={['img']}
         components={{
+          img: ({ src, alt }) =>
+            isBucketImage(src) ? <img src={src} alt={alt ?? ''} loading="lazy" decoding="async" /> : null,
           a: ({ href, children: label }) =>
             href && /^https?:/i.test(href) ? (
               <a href={href} target="_blank" rel="noopener noreferrer">

@@ -26,6 +26,7 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       ADMIN_API_KEY: ${ADMIN_API_KEY}
       SITE_LINK_ONLY: ${SITE_LINK_ONLY:-false}
+      IMAGE_UPLOAD_PAR_URL: ${IMAGE_UPLOAD_PAR_URL:-}
     depends_on:
       db:
         condition: service_healthy

@@ -14,3 +14,20 @@ export const LINK_ONLY = import.meta.env.VITE_LINK_ONLY === 'true'
  * visible in the built JavaScript.
  */
 export const ADMIN_PATH: string | undefined = (import.meta.env.VITE_ADMIN_PATH ?? '').trim().replace(/^\/+|\/+$/g, '') || undefined
+
+/**
+ * Public base address of the image bucket (build time), e.g.
+ * "https://objectstorage.<region>.oraclecloud.com/n/<namespace>/b/<bucket>/o/".
+ * Article Markdown renders only images whose address starts with this; when unset
+ * (or not https) no image is ever rendered.
+ */
+export const IMAGE_BASE_URL: string | undefined = (() => {
+  const raw = (import.meta.env.VITE_IMAGE_BASE_URL ?? '').trim()
+  if (!raw) return undefined
+  try {
+    const url = new URL(raw)
+    return url.protocol === 'https:' ? url.href : undefined
+  } catch {
+    return undefined
+  }
+})()
