@@ -93,7 +93,7 @@ Articles are written in the admin tool in English and Arabic. A published articl
 - **Public API:** `GET /api/articles` (published list: id, titles, summaries, `publishedAt`; 20/min) and `GET /api/articles/{id}` (full, both languages; 404 for drafts, unknown and non-numeric ids). Neither exposes status or tokens. Both are Caffeine-cached (`articleList`, `article`) and every admin write evicts both.
 - **Link-only mode:** `/api/articles/{id}` needs an `X-Page-Token` whose active link is `ARTICLE` with that id (another article's token, a page token, or none gives 404); `/api/articles` is always 404. Implemented in `LinkOnlyInterceptor.grants()`.
 - **Frontend:** `ArticleView` renders title, summary, date and body (shared by `ArticlePage` and the admin preview); language comes from the i18n locale via `pick()` rules (Arabic falls back to English per field; an English fallback body stays left-to-right). Dates: `en-GB` / `ar-SA` with the Gregorian calendar and Latin digits. Routes: `/articles`, `/articles/:id` (normal mode), or `/p/:token` resolving to an ARTICLE (both modes). The navbar has an "Articles" link in normal mode only. Analytics records `article:<id>`, never a token.
-- **Markdown** is rendered by `react-markdown` (`components/Markdown.tsx`). Raw HTML is escaped (never add `rehype-raw`), images are not rendered yet, and only `http`, `https`, `mailto` (plus relative/`#` links) survive `urlTransform`; external links open in a new tab with `rel="noopener noreferrer"`. Typography is the `.article-prose` class in `index.css`.
+- **Markdown** is rendered by `react-markdown` (`components/Markdown.tsx`). Raw HTML is escaped (never add `rehype-raw`), images render only from the image bucket (`VITE_IMAGE_BASE_URL`: https, address starts with it after URL parsing, so `..` cannot escape; anything else renders nothing; `loading="lazy"`, no fixed size, styled by `.article-prose img`), and only `http`, `https`, `mailto` (plus relative/`#` links) survive `urlTransform`; external links open in a new tab with `rel="noopener noreferrer"`. Typography is the `.article-prose` class in `index.css`.
 
 ### Admin tool (articles and links)
 A small English-only web UI for the owner, served by the frontend at a secret address. Lazy-loaded (separate JS chunk), always `noindex, nofollow`, works in both normal and link-only mode, and has no navbar/analytics.
@@ -101,8 +101,17 @@ A small English-only web UI for the owner, served by the frontend at a secret ad
 - **Enable:** set build-time `VITE_ADMIN_PATH` to a random string (e.g. in Netlify env vars), redeploy, then open `https://<site>/<VITE_ADMIN_PATH>`. Unset = no admin route at all (the address is just another unknown page). Local: `VITE_ADMIN_PATH=dev-admin-ui npm run dev`. The path is only obscurity (it is visible in the built JS); the `ADMIN_API_KEY` is the real protection.
 - **Sign-in:** enter the `ADMIN_API_KEY`. It is kept in `sessionStorage` only (gone when the tab closes); "Sign out" clears it, and a 401/403 from the API returns to the key screen with a message.
 - **Content and links:** pages (home, journey, meeqat, boundaries) and articles with status, secret link, copy link (full `https://<site>/p/<token>`), reset link (confirm; the old link stops working), and for articles edit and delete. Filter chips All / Pages / Articles / Drafts.
-- **Editor:** English and Arabic side by side with a Markdown toolbar (bold, italic, heading, list, link; the photo button is disabled because images are not supported yet). Amber pills name missing required fields and Publish stays disabled until all six are filled; a live article cannot be saved with a blank field. Preview shows the article as visitors see it with an EN/AR toggle. Leaving with unsaved changes asks first.
+- **Editor:** English and Arabic side by side with a Markdown toolbar (bold, italic, heading, list, link, photo). Amber pills name missing required fields and Publish stays disabled until all six are filled; a live article cannot be saved with a blank field. The photo button opens a file picker (JPEG, PNG, WebP); the browser resizes the photo (longest side at most 1600 px, never upscaled) and re-encodes it as WebP at 0.85 (JPEG if WebP is unavailable), which also strips EXIF/GPS metadata, uploads it via `POST /api/admin/images`, and inserts `![](url)` at the cursor with the cursor in the alt brackets (the body is read-only while "Uploading…"). Preview shows the article as visitors see it with an EN/AR toggle, images included. Leaving with unsaved changes asks first.
 - **Request budget:** the UI loads the list and links once (2 requests) and updates from save responses; opening an article is 1 request, Save 1, Publish 1-2. This fits comfortably in the 30/min admin limit; if it is ever hit, the UI says to wait a minute.
+
+### Images (OCI Object Storage)
+Article images live in an OCI Object Storage bucket that is **public-read**. The backend never signs requests: `POST /api/admin/images` (`X-Admin-Key`, 30/min admin budget) takes the raw image bytes (not multipart) with `Content-Type` `image/jpeg|png|webp`, checks the magic bytes match, rejects over 5 MB (413; read bounded, Content-Length not trusted), and PUTs `articles/<uuid>.<jpg|png|webp>` to a bucket-level **write-only pre-authenticated request (PAR) URL** with `Cache-Control: public, max-age=31536000, immutable`. It returns `201 {"url": ...}`, the PAR URL minus its `/p/<secret>` segment. 503 = not configured, 502 = the bucket refused (generic message; the PAR URL is never logged or returned). Code: `AdminImageController`, `ImageStorageService`.
+
+- **Backend setting:** `IMAGE_UPLOAD_PAR_URL` (property `images.upload-par-url`, empty = uploads disabled) in the VM `.env`; `docker-compose.prod.yml` and `docker-compose.yml` pass it through. It is a secret. Shape: `https://objectstorage.<region>.oraclecloud.com/p/<secret>/n/<namespace>/b/<bucket>/o/` (an invalid value counts as not configured).
+- **Frontend setting:** `VITE_IMAGE_BASE_URL` on Netlify (build time, read only in `config.ts`): `https://objectstorage.<region>.oraclecloud.com/n/<namespace>/b/<bucket>/o/`. Unset = no image renders anywhere.
+- **Limits (Always Free):** 20 GB storage and 50,000 API requests per month. Uploads count against the requests; the year-long `Cache-Control` keeps repeat views away from them. The resize step keeps files small.
+- **Link-only mode:** images are not gated. Anyone who has the exact random object URL can fetch it (it is unguessable, but not secret from someone who is shown it).
+- **Deleting:** deleting or unpublishing an article does not delete its images, because a write PAR cannot delete objects. Remove unwanted ones in the OCI console.
 
 ### Spring Security
 - `SecurityConfig.java` — CSRF disabled, stateless sessions, `/api/**` permitted, everything else denied (`denyAll()`).
@@ -147,6 +156,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 **Environment variables required on the VM** — set in a `.env` file in the repo root on the VM (never committed; `docker-compose.prod.yml` reads them):
 - `DB_PASSWORD` — Postgres password (also used as `SPRING_DATASOURCE_PASSWORD`)
 - `ADMIN_API_KEY` — secret key for `/api/admin/*` endpoints
+- `IMAGE_UPLOAD_PAR_URL` — (optional) write-only PAR URL of the image bucket; see "Images" (empty = uploads disabled)
 
 (`SPRING_PROFILES_ACTIVE=prod` and the DB URL/username are hardcoded in `docker-compose.prod.yml` itself, not env-configured.)
 
@@ -176,6 +186,8 @@ Sanctuary Green theme (from Claude Design). Key tokens:
 | Backend | `LinkOnlyIntegrationTest` | Link-only gating: no/wrong/other-page/revoked token → 404, right token → 200, noindex header, CORS preflight (own context with `site.link-only=true`) |
 | Backend | `ArticleIntegrationTest` | Article admin CRUD, partial update, length validation, publish rules (missing Arabic gives 400), link creation, unpublish keeps link, delete revokes it, link reset, public list/get, cache eviction (cleans up its own articles) |
 | Backend | `ArticleLinkOnlyIntegrationTest` | Article gating in link-only mode: own token 200, another article's / a page's / no token 404, list 404, unpublished 404, admin reachable |
+| Backend | `ImageUploadIntegrationTest` | Image upload against a local fake bucket (`HttpServer`): public URL derived, bytes / Content-Type / Cache-Control forwarded, wrong or missing key 401, wrong type 400, magic-byte mismatch 400, over 5 MB 413, bucket failure 502 |
+| Backend | `ImageUploadNotConfiguredIntegrationTest` | No PAR URL: 503 with a clear message (401 still wins for a wrong key) |
 | Backend | `JourneyServiceTest` | `findAllOrdered()` delegation and ordering |
 | Backend | `MeeqatServiceTest` | `findAll()`, `findById()`, 404 case |
 | Backend | `BoundaryServiceTest` | `findAllBoundaries()`, `findAllBoundaryPoints()` |
@@ -185,9 +197,10 @@ Sanctuary Green theme (from Claude Design). Key tokens:
 | Frontend | `useApi.test.ts` | Loading / error / retry state transitions |
 | Frontend | `App.routing.test.tsx` | Routing in both modes (token page, NotAvailable, forwarding, no nav links, analytics never records the token), ARTICLE links and article routes, admin route present only when `VITE_ADMIN_PATH` is set |
 | Frontend | `links.test.ts` | `X-Page-Token` header, cache per token, `resolveLink` 404/other errors |
-| Frontend | `Markdown.test.tsx` | Raw HTML escaped, `javascript:`/`data:` links dropped, external links `noopener`, images not rendered |
+| Frontend | `Markdown.test.tsx` | Raw HTML escaped, `javascript:`/`data:` links dropped, external links `noopener`, images only from the bucket (lazy, alt; other hosts, `..` escapes, http, `data:` dropped; none without a base) |
 | Frontend | `ArticlePage.test.tsx` | Language choice with per-field English fallback, RTL body, localised date, meta tags, not-found, retry |
 | Frontend | `AdminApp.test.tsx` | Key kept in sessionStorage only, sign out, rejected key, one list load, filters, copy/reset/delete with confirmation |
 | Frontend | `ArticleEditor.test.tsx` | Missing-field warnings, Publish blocked, save/publish/unpublish flow, unsaved-changes guards, preview, toolbar |
-| Frontend | `markdownTools.test.ts` | Toolbar Markdown insertion |
+| Frontend | `markdownTools.test.ts` | Toolbar Markdown insertion, image insertion with the cursor in the alt text |
+| Frontend | `adminApi.test.ts` | Image upload request (raw body, content type, key), upload error mapping (503, 413/400/502 server message, 429) |
 | Frontend | `MapErrorBoundary.test.tsx` | Error catch, fallback render, reset |

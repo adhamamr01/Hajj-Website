@@ -3,9 +3,10 @@ import { ArrowLeft, Bold, Heading2, Image as ImageIcon, Italic, Link2, List } fr
 import ArticleView from '../components/ArticleView'
 import type { Locale } from '../i18n/translations'
 import ConfirmDialog from './ConfirmDialog'
-import { applyMarkdown, type MarkdownAction } from './markdownTools'
+import { prepareImage } from './imageTools'
+import { applyMarkdown, insertImage, type MarkdownAction } from './markdownTools'
 import {
-  AdminAuthError, createArticle, errorMessage, getArticle, publishArticle, unpublishArticle, updateArticle,
+  AdminAuthError, createArticle, errorMessage, getArticle, publishArticle, unpublishArticle, updateArticle, uploadErrorMessage, uploadImage,
   type AdminArticle, type ArticleFields,
 } from './adminApi'
 
@@ -312,8 +313,8 @@ export default function ArticleEditor({ adminKey, articleId, onSaved, onBack, on
         </div>
       ) : (
         <div className="mt-2 grid gap-6 md:grid-cols-2">
-          <LanguageColumn lang="en" form={form} onChange={change} />
-          <LanguageColumn lang="ar" form={form} onChange={change} />
+          <LanguageColumn lang="en" form={form} onChange={change} adminKey={adminKey} onError={setError} onAuthError={onAuthError} />
+          <LanguageColumn lang="ar" form={form} onChange={change} adminKey={adminKey} onError={setError} onAuthError={onAuthError} />
         </div>
       )}
 
@@ -362,14 +363,22 @@ function LanguageColumn({
   lang,
   form,
   onChange,
+  adminKey,
+  onError,
+  onAuthError,
 }: {
   lang: 'en' | 'ar'
   form: ArticleFields
   onChange: (field: keyof ArticleFields, value: string) => void
+  adminKey: string
+  onError: (message: string | null) => void
+  onAuthError: () => void
 }) {
   const c = COPY[lang]
   const bodyRef = useRef<HTMLTextAreaElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
   const pendingSelection = useRef<{ start: number; end: number } | null>(null)
+  const [uploading, setUploading] = useState(false)
 
   // After a toolbar edit re-renders the textarea, put the cursor where the edit left it.
   useLayoutEffect(() => {
@@ -387,6 +396,27 @@ function LanguageColumn({
     const edit = applyMarkdown(action, ta.value, ta.selectionStart, ta.selectionEnd)
     pendingSelection.current = { start: edit.selectionStart, end: edit.selectionEnd }
     onChange(c.fields.body, edit.value)
+  }
+
+  /** Resizes and uploads the chosen photo, then inserts it where the cursor was. */
+  const addPhoto = async (file: File) => {
+    const ta = bodyRef.current
+    if (!ta) return
+    // The textarea is read-only while uploading, so this position is still valid afterwards.
+    const { selectionStart, selectionEnd } = ta
+    setUploading(true)
+    onError(null)
+    try {
+      const url = await uploadImage(adminKey, await prepareImage(file))
+      const edit = insertImage(ta.value, selectionStart, selectionEnd, url)
+      pendingSelection.current = { start: edit.selectionStart, end: edit.selectionEnd }
+      onChange(c.fields.body, edit.value)
+    } catch (err) {
+      if (err instanceof AdminAuthError) onAuthError()
+      else onError(uploadErrorMessage(err))
+    } finally {
+      setUploading(false)
+    }
   }
 
   const input = 'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary'
@@ -439,18 +469,35 @@ function LanguageColumn({
           <button
             type="button"
             className={toolButton}
-            disabled
-            aria-label="Insert photo (images coming soon)"
-            title="Images coming soon"
+            disabled={uploading}
+            aria-label={`Insert photo (${lang === 'en' ? 'English' : 'Arabic'} body)`}
+            title="Insert photo"
+            onClick={() => fileRef.current?.click()}
           >
             <ImageIcon size={16} aria-hidden="true" />
           </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            hidden
+            data-testid={`photo-input-${lang}`}
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              e.target.value = '' // allow choosing the same file again
+              if (file) void addPhoto(file)
+            }}
+          />
+          {uploading && (
+            <span role="status" className="self-center px-2 text-sm text-gray-600">Uploading…</span>
+          )}
         </div>
         <textarea
           id={`body-${lang}`}
           ref={bodyRef}
           rows={16}
           maxLength={100000}
+          readOnly={uploading}
           value={form[c.fields.body]}
           onChange={(e) => onChange(c.fields.body, e.target.value)}
           className={`${input} min-h-[20rem] leading-relaxed`}

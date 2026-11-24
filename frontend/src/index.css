@@ -140,6 +140,7 @@
   }
   :lang(ar) .article-prose blockquote { font-style: normal; }
   .article-prose code { @apply bg-gray-100 rounded px-1 text-base; }
+  .article-prose img { @apply block max-w-full h-auto rounded-xl shadow-card; margin-inline: auto; }
   .article-prose hr { @apply border-gray-200; }
 }
 

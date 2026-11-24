@@ -45,3 +45,16 @@ export function applyMarkdown(action: MarkdownAction, value: string, start: numb
     selectionEnd: end + prefix.length * changed.length,
   }
 }
+
+/**
+ * Inserts an image at [start, end): `![alt](url)`, where a selected text becomes the alt text.
+ * The returned selection covers the alt text so the owner can type a description at once.
+ */
+export function insertImage(value: string, start: number, end: number, url: string): TextEdit {
+  const alt = value.slice(start, end)
+  return {
+    value: value.slice(0, start) + `![${alt}](${url})` + value.slice(end),
+    selectionStart: start + 2,
+    selectionEnd: start + 2 + alt.length,
+  }
+}

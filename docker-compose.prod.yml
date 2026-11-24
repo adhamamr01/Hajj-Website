@@ -25,6 +25,8 @@ services:
       ADMIN_API_KEY: ${ADMIN_API_KEY}
       # Pre-launch: pages open only via secret links. Set to "false" to launch.
       SITE_LINK_ONLY: "true"
+      # Write-only pre-authenticated request URL of the image bucket (a secret; empty = uploads disabled).
+      IMAGE_UPLOAD_PAR_URL: ${IMAGE_UPLOAD_PAR_URL:-}
       # The VM is a VM.Standard.E2.1.Micro (1 GB RAM, 1/8 OCPU): cap the heap and
       # use the single-threaded GC so Postgres, Caddy and the JVM all fit.
       JAVA_TOOL_OPTIONS: "-Xmx256m -XX:+UseSerialGC"

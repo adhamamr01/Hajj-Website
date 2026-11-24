@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyMarkdown } from '../markdownTools'
+import { applyMarkdown, insertImage } from '../markdownTools'
 
 describe('applyMarkdown', () => {
   it('wraps the selection in bold and keeps it selected', () => {
@@ -34,5 +34,20 @@ describe('applyMarkdown', () => {
     const r = applyMarkdown('link', '', 0, 0)
     expect(r.value).toBe('[link text](https://)')
     expect(r.value.slice(r.selectionStart, r.selectionEnd)).toBe('link text')
+  })
+})
+
+describe('insertImage', () => {
+  it('inserts an image with empty alt text and the cursor inside the brackets', () => {
+    const r = insertImage('ab', 1, 1, 'https://x/o/a.webp')
+    expect(r.value).toBe('a![](https://x/o/a.webp)b')
+    expect(r.selectionStart).toBe(3)
+    expect(r.selectionEnd).toBe(3)
+  })
+
+  it('uses selected text as the alt text and keeps it selected', () => {
+    const r = insertImage('the Kaaba here', 4, 9, 'https://x/o/a.webp')
+    expect(r.value).toBe('the ![Kaaba](https://x/o/a.webp) here')
+    expect(r.value.slice(r.selectionStart, r.selectionEnd)).toBe('Kaaba')
   })
 })

@@ -48,9 +48,15 @@ export class AdminAuthError extends Error {
   }
 }
 
-async function call<T>(key: string, method: 'get' | 'post' | 'put' | 'delete', url: string, data?: unknown): Promise<T> {
+async function call<T>(
+  key: string,
+  method: 'get' | 'post' | 'put' | 'delete',
+  url: string,
+  data?: unknown,
+  headers: Record<string, string> = {},
+): Promise<T> {
   try {
-    const res = await api.request<T>({ method, url, data, headers: { 'X-Admin-Key': key } })
+    const res = await api.request<T>({ method, url, data, headers: { ...headers, 'X-Admin-Key': key } })
     return res.data
   } catch (err) {
     const status = (err as { response?: { status?: number } })?.response?.status
@@ -66,6 +72,17 @@ export function errorMessage(err: unknown): string {
   if (res?.data?.error) return res.data.error
   return 'Something went wrong. Check the connection and try again.'
 }
+
+/** Like errorMessage, with a clearer message when the server has no image storage configured. */
+export function uploadErrorMessage(err: unknown): string {
+  const status = (err as { response?: { status?: number } })?.response?.status
+  if (status === 503) return "Image uploads aren't set up on the server yet."
+  return errorMessage(err)
+}
+
+/** Uploads an image (already resized) and resolves to its public address. */
+export const uploadImage = async (key: string, image: Blob): Promise<string> =>
+  (await call<{ url: string }>(key, 'post', '/admin/images', image, { 'Content-Type': image.type })).url
 
 export const listArticles = (key: string) => call<AdminArticleSummary[]>(key, 'get', '/admin/articles')
 export const getArticle = (key: string, id: number) => call<AdminArticle>(key, 'get', `/admin/articles/${id}`)
